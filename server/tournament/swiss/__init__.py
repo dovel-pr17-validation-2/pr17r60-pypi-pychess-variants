@@ -1,0 +1,414 @@
+from __future__ import annotations
+
+import logging
+import tempfile
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from const import SWISS, T_CREATED, T_STARTED
+from notify import notify_by_username
+from py4swiss.engines import DutchEngine
+from py4swiss.engines.common import PairingError
+from py4swiss.trf import ParsedTrf
+from py4swiss.trf.codes import PlayerCode
+from py4swiss.trf.results import (
+    ColorToken,
+    ResultToken,
+    RoundResult,
+    ScoringPointSystem,
+    ScoringPointSystemCode,
+)
+from py4swiss.trf.sections import PlayerSection, XSection
+from py4swiss.trf.sections.x_section import XSectionConfiguration
+from typing_defs import NotificationContent
+
+from tournament.tournament import SWISS_MAX_PLAYERS, PairingUnavailable, Tournament
+
+from .history import (
+    _build_player_results,
+    _build_scoring_system,
+    _bye_point_value,
+    _half_bye_point_value,
+    _normalized_pairing_lines,
+    _score_points_times_ten,
+    _swiss_berger_tiebreak,
+)
+from .state import (
+    _build_dutch_pairing_state,
+    _DutchPairingState,
+    _materialize_pairings,
+)
+from .tournament_ops import (
+    _active_swiss_ban_until as _active_swiss_ban_until_impl,
+)
+from .tournament_ops import (
+    _apply_bye_points as _apply_bye_points_impl,
+)
+from .tournament_ops import (
+    _ban_swiss_no_show as _ban_swiss_no_show_impl,
+)
+from .tournament_ops import (
+    _clear_consumed_manual_pairings as _clear_consumed_manual_pairings_impl,
+)
+from .tournament_ops import (
+    _clear_swiss_ban as _clear_swiss_ban_impl,
+)
+from .tournament_ops import (
+    _consume_manual_pairings as _consume_manual_pairings_impl,
+)
+from .tournament_ops import (
+    _initialize_late_entry_round_history as _initialize_late_entry_round_history_impl,
+)
+from .tournament_ops import (
+    _is_late_join_allowed as _is_late_join_allowed_impl,
+)
+from .tournament_ops import (
+    _late_join_half_point as _late_join_half_point_impl,
+)
+from .tournament_ops import (
+    _manual_pairing_entries as _manual_pairing_entries_impl,
+)
+from .tournament_ops import (
+    _persist_late_entry_round_history as _persist_late_entry_round_history_impl,
+)
+from .tournament_ops import (
+    _player_who_did_not_move as _player_who_did_not_move_impl,
+)
+from .tournament_ops import (
+    _record_bye as _record_bye_impl,
+)
+from .tournament_ops import (
+    _update_swiss_no_show_bans as _update_swiss_no_show_bans_impl,
+)
+from .tournament_ops import (
+    pair_fixed_round as pair_fixed_round_impl,
+)
+from .tournament_ops import (
+    persist_byes as persist_byes_impl,
+)
+from .tournament_ops import (
+    persist_unpaired_round_entries as persist_unpaired_round_entries_impl,
+)
+from .tournament_ops import (
+    recalculate_berger_tiebreak as recalculate_berger_tiebreak_impl,
+)
+
+if TYPE_CHECKING:
+    from game import Game
+    from user import User
+
+    from tournament.tournament import GameData, PlayerData
+
+
+log = logging.getLogger(__name__)
+
+
+def build_trf_export_text(tournament: Tournament, waiting_players: list[User] | None = None) -> str:
+    """Export current Swiss tournament pairing state as TRF text.
+
+    The exported state mirrors the same internal mapping used by Swiss pairing.
+    """
+    selected_waiting_players = waiting_players
+    if selected_waiting_players is None:
+        selected_waiting_players = tournament.waiting_players()
+
+    completed_rounds = max(0, tournament.current_round - 1)
+    state = _build_dutch_pairing_state(
+        tournament=tournament,
+        waiting_players=selected_waiting_players,
+        completed_rounds=completed_rounds,
+    )
+
+    # py4swiss currently exposes TRF serialization through file output.
+    with tempfile.NamedTemporaryFile(suffix=".trf", delete=False) as temp_file:
+        temp_path = Path(temp_file.name)
+
+    try:
+        state.trf.write_to_file(temp_path)
+        return temp_path.read_text(encoding="utf-8")
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
+class SwissTournament(Tournament):
+    """Swiss tournament implementation backed by py4swiss."""
+
+    system = SWISS
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._manual_pairings_used_for_round = False
+        self._last_manual_bye_count = 0
+
+    def _active_start_reminder_usernames(self) -> list[str]:
+        return sorted(
+            username
+            for username, player_data in self.players_by_name.items()
+            if not player_data.withdrawn and not player_data.paused
+        )
+
+    async def _existing_start_reminder_usernames(self) -> set[str]:
+        if self.app_state.db is None:
+            existing: set[str] = set()
+            for username in self._active_start_reminder_usernames():
+                user = self.app_state.users.data.get(username)
+                if user is None or user.notifications is None:
+                    continue
+                if any(
+                    notification.get("type") == "swissStartReminder"
+                    and notification.get("content", {}).get("tid") == self.id
+                    for notification in user.notifications
+                ):
+                    existing.add(username)
+            return existing
+
+        cursor = self.app_state.db.notify.find(
+            {
+                "type": "swissStartReminder",
+                "content.tid": self.id,
+                "content.date": self.starts_at.isoformat(),
+            }
+        )
+        documents = await cursor.to_list(length=SWISS_MAX_PLAYERS)
+        return {str(document.get("notifies", "")) for document in documents}
+
+    async def send_scheduled_start_reminders(self) -> None:
+        if self.status != T_CREATED or not self.team_id:
+            return
+
+        usernames = self._active_start_reminder_usernames()
+        if not usernames:
+            return
+
+        try:
+            already_notified = await self._existing_start_reminder_usernames()
+        except Exception:
+            log.exception("Failed to load Swiss start-reminder state for %s", self.id)
+            already_notified = set()
+
+        content: NotificationContent = {
+            "tid": self.id,
+            "name": self.name,
+            "date": self.starts_at.isoformat(),
+        }
+        for username in usernames:
+            if username in already_notified:
+                continue
+            try:
+                await notify_by_username(self.app_state, username, "swissStartReminder", content)
+            except Exception:
+                # A best-effort reminder must never stop the tournament clock.
+                log.exception(
+                    "Failed to send Swiss start reminder for %s to %s",
+                    self.id,
+                    username,
+                )
+
+    async def _clear_consumed_manual_pairings(self) -> None:
+        await _clear_consumed_manual_pairings_impl(self)
+
+    def _manual_pairing_entries(
+        self,
+        waiting_players: list[User],
+    ) -> tuple[list[tuple[User, User]], list[User]]:
+        return _manual_pairing_entries_impl(self, waiting_players)
+
+    def _consume_manual_pairings(
+        self,
+        waiting_players: list[User],
+    ) -> tuple[list[tuple[User, User]], bool]:
+        return _consume_manual_pairings_impl(self, waiting_players)
+
+    def _active_swiss_ban_until(self, user: User, now: datetime | None = None) -> datetime | None:
+        return _active_swiss_ban_until_impl(self, user, now)
+
+    async def _clear_swiss_ban(self, user: User, game_id: str) -> None:
+        await _clear_swiss_ban_impl(self, user, game_id)
+
+    async def _ban_swiss_no_show(self, user: User, now: datetime, game_id: str) -> None:
+        await _ban_swiss_no_show_impl(self, user, now, game_id)
+
+    def _player_who_did_not_move(self, game: Game) -> User | None:
+        return _player_who_did_not_move_impl(self, game)
+
+    async def _update_swiss_no_show_bans(self, game: Game | GameData) -> None:
+        await _update_swiss_no_show_bans_impl(self, game)
+
+    def recalculate_berger_tiebreak(self) -> None:
+        recalculate_berger_tiebreak_impl(self)
+
+    def _record_bye(self, player: User) -> None:
+        _record_bye_impl(self, player)
+
+    def _is_late_join_allowed(self) -> bool:
+        return _is_late_join_allowed_impl(self)
+
+    def _late_join_half_point(self) -> int:
+        return _late_join_half_point_impl(self)
+
+    def entry_condition_error(self, user: User) -> str | None:
+        base_error = super().entry_condition_error(user)
+        if base_error is not None:
+            return base_error
+
+        banned_until = self._active_swiss_ban_until(user)
+        if banned_until is None:
+            return None
+
+        return (
+            "Because you missed your last Swiss game, you cannot enter a new Swiss tournament "
+            "until %s."
+        ) % banned_until.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC")
+
+    async def _initialize_late_entry_round_history(self, player: User) -> None:
+        await _initialize_late_entry_round_history_impl(self, player)
+
+    async def _prepare_player_join(
+        self, player: User, player_data: PlayerData, *, is_new_player: bool
+    ) -> None:
+        if self.status == T_STARTED and is_new_player:
+            await self._initialize_late_entry_round_history(player)
+
+    async def _persist_player_join_side_data(
+        self, player: User, player_data: PlayerData, *, is_new_player: bool
+    ) -> None:
+        if self.status == T_STARTED and player_data.joined_round > 1:
+            await _persist_late_entry_round_history_impl(self, player)
+
+    def participant_count(self) -> int:
+        # Match the complete player set included in _build_dutch_pairing_state().
+        # Withdrawn players still contribute TRF rows, so counting only nb_players
+        # would let join/withdraw churn bypass the pairing-work bound.
+        return len({player.username for player in self.players}.union(self.players_by_name))
+
+    async def join_precheck(self, user: User, player_data: PlayerData | None) -> str | None:
+        if player_data is None and self.participant_count() >= SWISS_MAX_PLAYERS:
+            return f"This Swiss tournament is full (maximum {SWISS_MAX_PLAYERS} players)."
+        return await super().join_precheck(user, player_data)
+
+    async def join(self, user: User, password: str | None = None) -> str | None:
+        is_new_player = self.player_data_by_name(user.username) is None
+        if self.status == T_STARTED and is_new_player and not self._is_late_join_allowed():
+            return "LATE_JOIN_CLOSED"
+
+        return await super().join(user, password)
+
+    async def game_update(self, game: Game) -> None:
+        # Persist Swiss no-show state before tournament scoring.  If the process
+        # dies after this write, restart recovery can replay it idempotently and
+        # then recover the still-missing tournament result.
+        await self._update_swiss_no_show_bans(game)
+        await super().game_update(game)
+
+    async def recover_game_update(self, game: Game | GameData) -> None:
+        await self._update_swiss_no_show_bans(game)
+        await super().recover_game_update(game)
+
+    async def pair_fixed_round(self, now: datetime) -> bool:
+        return await pair_fixed_round_impl(self, now)
+
+    def _apply_bye_points(self, player: User) -> None:
+        _apply_bye_points_impl(self, player)
+
+    async def persist_byes(self) -> None:
+        await persist_byes_impl(self)
+
+    async def persist_unpaired_round_entries(
+        self,
+        round_no: int,
+        pairing: list[tuple[User, User]],
+        bye_players: list[User],
+    ) -> None:
+        await persist_unpaired_round_entries_impl(self, round_no, pairing, bye_players)
+
+    def _prepare_pairing_request(
+        self,
+        waiting_players: list[User],
+    ) -> tuple[list[tuple[User, User]] | None, int]:
+        manual_pairing, manual_used = self._consume_manual_pairings(waiting_players)
+        if manual_used:
+            return (manual_pairing, 0)
+
+        if len(waiting_players) == 0:
+            return ([], 0)
+        if len(waiting_players) == 1:
+            self._record_bye(waiting_players[0])
+            return ([], 0)
+
+        completed_rounds = max(0, self.current_round - 1)
+        return (None, completed_rounds)
+
+    def _create_pairing(
+        self,
+        waiting_players: list[User],
+        *,
+        completed_rounds: int,
+    ) -> list[tuple[User, User]]:
+        state = _build_dutch_pairing_state(self, waiting_players, completed_rounds)
+        try:
+            dutch_pairings = DutchEngine.generate_pairings(state.trf)
+        except PairingError as exc:
+            raise PairingUnavailable(
+                f"py4swiss could not find a legal Dutch pairing: {exc}"
+            ) from exc
+
+        pairings_by_id = [
+            (dutch_pairing.white, dutch_pairing.black if dutch_pairing.black != 0 else None)
+            for dutch_pairing in dutch_pairings
+        ]
+        pairing = _materialize_pairings(
+            tournament=self,
+            state=state,
+            backend_name="py4swiss",
+            pairings_by_id=pairings_by_id,
+        )
+        log.debug(
+            "Swiss Dutch pairing created %s games in %s using backend=py4swiss",
+            len(pairing),
+            self.id,
+        )
+        if len(waiting_players) >= 2 and len(pairing) == 0:
+            raise PairingUnavailable("No valid pairing exists")
+        return pairing
+
+    def create_pairing(self, waiting_players: list[User]) -> list[tuple[User, User]]:
+        """Create pairings for the current waiting players using py4swiss."""
+
+        precomputed, completed_rounds = self._prepare_pairing_request(waiting_players)
+        if precomputed is not None:
+            return precomputed
+
+        return self._create_pairing(
+            waiting_players,
+            completed_rounds=completed_rounds,
+        )
+
+
+__all__ = [
+    "SWISS_MAX_PLAYERS",
+    "ColorToken",
+    "DutchEngine",
+    "PairingError",
+    "ParsedTrf",
+    "PlayerCode",
+    "PlayerSection",
+    "ResultToken",
+    "RoundResult",
+    "ScoringPointSystem",
+    "ScoringPointSystemCode",
+    "SwissTournament",
+    "XSection",
+    "XSectionConfiguration",
+    "_DutchPairingState",
+    "_build_dutch_pairing_state",
+    "_build_player_results",
+    "_build_scoring_system",
+    "_bye_point_value",
+    "_half_bye_point_value",
+    "_materialize_pairings",
+    "_normalized_pairing_lines",
+    "_score_points_times_ten",
+    "_swiss_berger_tiebreak",
+    "build_trf_export_text",
+]

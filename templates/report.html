@@ -1,0 +1,106 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap" class="report-wrap">
+    <main class="page-small box box-pad report">
+        <h1 class="box__top">Report a user</h1>
+
+        <form class="form3 report-form" method="post" action="/report">
+            <div class="form-group report-about">
+                <p>
+                    <a class="text report-faq-link" href="/report/faq" target="_blank" rel="noopener">Read more about reports</a>
+                </p>
+            </div>
+
+            {% if report_error %}
+            <p class="report-error">{{ report_error }}</p>
+            {% endif %}
+
+            <input type="hidden" name="source" value="{{ report_source }}">
+            <input type="hidden" name="thread" value="{{ report_thread }}">
+            <input type="hidden" name="url" value="{{ report_url }}">
+
+            <div class="form-group">
+                {% if report_user_locked %}
+                <div class="report-user-inline">
+                    <span class="form-label report-user-inline-label">User</span>
+                    <div class="report-user-readonly">
+                        <a class="user-link" href="/@/{{ report_username }}">{{ report_username }}</a>
+                        <input type="hidden" name="username" value="{{ report_username }}">
+                    </div>
+                </div>
+                {% else %}
+                <label class="form-label" for="form3-username">User</label>
+                <input id="form3-username" name="username" class="form-control" value="{{ report_username }}" minlength="3" maxlength="20" required autofocus>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="form3-reason">Reason</label>
+                <select id="form3-reason" name="reason" class="form-control">
+                    {% for option in report_reason_options %}
+                    <option value="{{ option.key }}"{% if option.key == report_reason %} selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" id="report-game-group">
+                <label class="form-label" for="form3-game-id">Game ID</label>
+                <input id="form3-game-id" name="gameId" class="form-control" value="{{ report_game_id }}" maxlength="8" placeholder="AbCd1234">
+            </div>
+
+            {% if report_inbox_msgs %}
+            <div class="form-group report-inbox-msgs" id="report-msgs-group">
+                <label class="form-label">Messages to report</label>
+                <ul>
+                    {% for msg in report_inbox_msgs %}
+                    <li>
+                        <input id="{{ msg.id }}" type="checkbox" name="msgs" value="{{ msg.id }}"{% if msg.id in report_selected_msgs %} checked{% endif %}>
+                        <label for="{{ msg.id }}"><strong>{{ msg.from }}</strong>: {{ msg.text }}</label>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label class="form-label" for="form3-details">Description</label>
+                <textarea id="form3-details" name="details" class="form-control" rows="8" maxlength="3000" required>{{ report_details }}</textarea>
+                <div class="report-reason-help">
+                    {% for option in report_reason_options %}
+                    <span class="report-reason report-reason-{{ option.key }}{% if option.key != report_reason %} none{% endif %}">
+                        {{ option.help }} Processed faster in English. Maximum 3000 characters.
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-actions report-actions">
+                <a href="/">Cancel</a>
+                <button class="submit button" type="submit">Send</button>
+            </div>
+        </form>
+    </main>
+</div>
+{% endblock %}
+{% block js %}
+    <script src="{{ js }}"></script>
+    <script>
+    (() => {
+      const reason = document.getElementById('form3-reason');
+      const source = "{{ report_source }}";
+      const gameGroup = document.getElementById('report-game-group');
+      const msgsGroup = document.getElementById('report-msgs-group');
+
+      if (gameGroup) gameGroup.classList.toggle('hidden', source !== 'game');
+      if (msgsGroup) msgsGroup.classList.toggle('hidden', source !== 'inbox');
+
+      if (reason) {
+        reason.addEventListener('change', () => {
+          document.querySelectorAll('.report-reason').forEach((el) => el.classList.add('none'));
+          const current = document.querySelector('.report-reason-' + reason.value);
+          if (current) current.classList.remove('none');
+        });
+      }
+    })();
+    </script>
+{% endblock %}

@@ -1,0 +1,981 @@
+*, ::before, ::after {
+    box-sizing: inherit;
+    margin: 0;
+    padding: 0;
+}
+
+.simuls {
+    grid-area: main;
+    max-width: 1000px;
+    margin: auto;
+    width: 100%;
+}
+
+.simul-list {
+    overflow: hidden;
+}
+
+.simul-list__help {
+    color: var(--font-color);
+    max-width: 350px;
+    margin-top: 9em;
+    margin-inline-end: 2rem;
+    text-shadow: 0 1px 0 var(--bg-color1);
+    text-align: left;
+    display: none;
+}
+
+.simul-list__help img {
+    width: 100%;
+    border-radius: 7px;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.simul-list__help em {
+    display: block;
+    font-style: italic;
+    padding: 0;
+    margin-bottom: 1em;
+}
+
+.simul-list__help p {
+    padding: 1vh 1vh 1vh 0;
+}
+
+.simul-list__content {
+    min-width: 0;
+}
+
+.simul-list__content .simuls {
+    max-width: none;
+    margin: 0;
+}
+
+@media (min-width: 1120px) {
+    .simul-list__help {
+        display: block;
+    }
+}
+
+/* Override outer layout for the single-simul page. */
+#pychess-variants[data-view="simul"] #main-wrap {
+    --main-max-width: min(96vw, 1600px);
+}
+
+.simul-new.page-small {
+    max-width: 840px;
+    width: 100%;
+    margin-inline: auto;
+}
+
+.simul-new > .box.box-pad {
+    padding: 4vh clamp(24px, 4vw, 40px);
+}
+
+#pychess-variants[data-view="simul"] main.simul,
+#pychess-variants[data-view="simul"] #simul-view {
+    width: 100%;
+    min-width: 0;
+}
+
+#pychess-variants[data-view="simul"] #simul-view {
+    display: contents;
+}
+
+a {
+    white-space:unset;
+}
+
+.box-pad, .box:not(.box-pad) > h1 {
+    padding: 5vh var(--box-padding);
+}
+
+.box {
+    --box-padding: 15px;
+}
+
+@media (min-width: 320px) {
+    .box {
+        --box-padding: calc( 15px + 45 * ((100vw - 320px) / 880));
+    }
+}
+
+@media (min-width: 1200px) {
+    .box {
+        --box-padding: 60px;
+    }
+}
+
+.box-top {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5vh;
+}
+
+h1 {
+    font-size: 40px;
+}
+
+.actions {
+    display: flex;
+    flex-flow: row wrap;
+}
+
+a.button.icon-plus-square, a.button.calendar {
+    color: #fff;
+    background: var(--green-switch);
+    box-shadow: 0 2px 5px 0 rgba(0,0,0,0.225);
+    border-radius: 3px;
+    padding: 0.8em 1em;
+    border: none;
+    text-align: center;
+    white-space: nowrap;
+    transition: all 150ms;
+    margin-left: 4px;
+}
+
+.text::before {
+    margin-right: 0.4em;
+}
+
+th {
+    font: inherit;
+    vertical-align: middle;
+    text-align: inherit;
+}
+
+.slist {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    border-bottom: 1px solid #d9d9d9;
+    margin-bottom: 3em;
+    border-collapse: collapse;
+}
+
+.slist thead {
+    background: var(--bg-color2);
+}
+
+.slist th:first-child {
+    padding-left: 1.5rem;
+}
+
+.slist thead th {
+    border-top: 1px solid #d9d9d9;
+    border-bottom: 1px solid #d9d9d9;
+    padding: 0.5rem 0.8rem;
+}
+
+.header a .name, .system, .starts {
+    display: block;
+}
+
+.header a .name {
+    font-size: 1.4em;
+}
+
+.by, td .icon {
+    color: var(--gold);
+}
+
+td .icon {
+    text-align: center;
+    font-size: 3.5em;
+}
+
+.slist tbody tr:nth-child(2n) {
+    background-color: var(--bg-color2)
+}
+
+.slist td {
+    padding: 1rem;
+    font: inherit;
+}
+
+.slist td:last-child {
+    text-align: right;
+}
+
+td a {
+    display: block;
+    color: var(--font-color);
+    padding: 1em;
+}
+
+td.header {
+    padding: 0;
+    transition: 150ms all;
+}
+
+td.header:hover {
+    transform: translateX(3px);
+}
+
+.simul-list .header .name,
+.simul-list .header .system,
+.simul-history .header .name,
+.simul-history .header .system {
+    letter-spacing: normal;
+    overflow-wrap: anywhere;
+}
+
+.name {
+    margin-top: 0.5em;
+}
+
+.starts {
+    opacity: 0.9;
+    font-size: 90%;
+}
+
+.system {
+    margin: 0.5em 0;
+}
+
+/* New Simul Form styling */
+.simul-new .form3 {
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+.simul-new .form3 .form-group {
+    margin-bottom: 1em;
+}
+
+.simul-new .form3 .form-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+.simul-new .form3 .form-control {
+    width: 100%;
+    padding: 0.5em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: var(--bg-color2);
+    color: var(--font-color);
+}
+
+.simul-new .form3 .form-split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+}
+
+.simul-new .form3 .form-half {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.simul-new .form3 .form-help {
+    color: var(--font-color);
+    opacity: 0.8;
+}
+
+.simul-new .form3 .simul-form__fieldset {
+    margin: 1rem 0 2rem;
+    padding: 1.4rem 1.8rem 0.35rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-color2);
+    min-width: 0;
+}
+
+.simul-new .form3 .simul-form__fieldset legend {
+    padding: 0.45rem 1rem;
+    border: none;
+    border-radius: 7px;
+    background: var(--bg-color2);
+    color: var(--font-color);
+    font-size: 1.05em;
+    font-weight: 600;
+}
+
+.simul-new .form3 .form-actions {
+    margin-top: 1.5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.simul-new .form3 .form-actions a {
+    margin-right: 1em;
+    color: var(--link-color-blue);
+    text-decoration: none;
+}
+
+.simul-new .form3 .form-actions a:hover {
+    text-decoration: underline;
+}
+
+.simul-new .form3 .form-actions button {
+    padding: 0.8em 1.5em;
+    border: none;
+    background-color: var(--green-switch);
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.simul-new .form3 .form-actions button:hover {
+    background-color: var(--green-hover);
+}
+
+/* Simul page styling */
+.simul, .simul-new {
+    grid-area: main;
+}
+
+.simul {
+    display: grid;
+    grid-template-areas:
+        'main'
+        'side';
+    gap: 1.25rem;
+    width: 100%;
+    min-width: 0;
+    align-items: start;
+}
+
+#pychess-variants[data-view="simul"] .simul h1,
+#pychess-variants[data-view="simul"] .simul h2,
+#pychess-variants[data-view="simul"] .simul p {
+    padding: 0;
+}
+
+#pychess-variants[data-view="simul"] .simul__main.box,
+#pychess-variants[data-view="simul"] .simul__meta.box {
+    padding: 1.1rem 1.2rem;
+}
+
+.simul__app {
+    display: contents;
+}
+
+.simul__main {
+    grid-area: main;
+    align-self: start;
+}
+
+.simul__side {
+    grid-area: side;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    align-self: start;
+}
+
+.simul__side > .chat {
+    min-height: 18rem;
+}
+
+.simul .box__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.simul .box__top h1 {
+    margin: 0;
+    font-size: 2.2em;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.simul .box__top h1 .author {
+    font-size: 0.7em;
+    font-weight: normal;
+    color: var(--link-color);
+}
+
+.simul .box__top__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    padding-top: 0.2rem;
+}
+
+.simul__cta,
+.simul__table-action {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color2);
+    color: var(--font-color);
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.simul__cta {
+    padding: 0.48rem 0.82rem;
+    font-size: 0.95rem;
+}
+
+.simul__table-action {
+    padding: 0.24rem 0.48rem;
+    margin-inline-start: 0.35rem;
+    font-size: 0.9rem;
+}
+
+.simul .button-green {
+    border-color: transparent;
+    background: var(--green-switch);
+    color: #fff;
+}
+
+.simul .button-red {
+    border-color: transparent;
+    background: var(--bad);
+    color: #fff;
+}
+
+.simul__cta:hover,
+.simul__table-action:hover {
+    filter: brightness(1.05);
+}
+
+.simul .instructions {
+    margin: 0 0 0.8rem;
+    text-align: center;
+    color: var(--link-color);
+}
+
+.simul .simul-text {
+    margin: 0 0.5rem 1rem;
+    padding: 1rem 1.2rem;
+    border-radius: 3px;
+    background: var(--bg-color2);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.simul .simul-text p {
+    line-height: 1.45;
+}
+
+.simul .halves {
+    display: flex;
+    align-items: stretch;
+}
+
+.simul .half {
+    flex: 0 0 50%;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.simul .half:first-child {
+    border-inline-end: 1px solid var(--border-color);
+}
+
+.simul .slist {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+
+.simul .slist thead th {
+    text-align: left;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
+}
+
+.simul .slist-pad th:first-child,
+.simul .slist-pad td:first-child {
+    padding-inline-start: 1.2rem;
+}
+
+.simul .slist-pad th:last-child,
+.simul .slist-pad td:last-child {
+    padding-inline-end: 1.2rem;
+}
+
+.simul .half .variant {
+    width: 3rem;
+    text-align: center;
+}
+
+.simul .half .variant::before,
+.simul__meta .header [data-icon]::before {
+    font-size: 1.6em;
+    opacity: 0.8;
+}
+
+.simul .half td.action {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.simul .half thead th {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+}
+
+.simul .half tbody td {
+    padding-top: 0.72rem;
+    padding-bottom: 0.72rem;
+}
+
+.simul .half tr.help th,
+.simul .half tr.empty td {
+    padding: 1.75rem 1.2rem;
+    color: var(--link-color);
+}
+
+.simul .half.candidates tr.me {
+    border-inline-start: 10px solid var(--gold);
+}
+
+.simul .half.accepted tr.me {
+    border-inline-end: 10px solid var(--gold);
+}
+
+.simul .user-link em {
+    font-style: normal;
+    font-weight: bold;
+    padding-inline-start: 5px;
+    color: var(--link-color);
+}
+
+.simul__meta {
+    background: var(--bg-color0);
+}
+
+.simul__meta .header {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.simul__meta .header > i,
+.simul__meta .header > [data-icon] {
+    flex: 0 0 auto;
+    font-size: 2.2em;
+}
+
+.simul__meta .header p {
+    margin: 0;
+}
+
+.simul__meta .header .clock {
+    display: block;
+    font-size: 1.45em;
+    line-height: 1.1;
+    box-shadow: none;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+.simul__meta__headline {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.2rem !important;
+    color: var(--link-color);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.simul__meta__edit {
+    opacity: 0.7;
+    font-size: 1.05rem;
+    text-decoration: none;
+}
+
+.simul__meta__edit:hover {
+    opacity: 1;
+}
+
+.simul__meta section {
+    margin-top: 0.6rem;
+}
+
+.simul__meta .game-infos {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.2rem;
+}
+
+.simul__meta__line {
+    margin: 0.12rem 0 0;
+    color: var(--font-color);
+    line-height: 1.3;
+}
+
+.simul__meta__date {
+    color: var(--link-color);
+}
+
+.simul__meta__statusline {
+    margin-top: 0.45rem;
+    color: var(--link-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.82rem;
+}
+
+.simul__meta__error {
+    margin-top: 0.5rem;
+    color: var(--error);
+}
+
+.simul-status {
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--font-color);
+    opacity: 0.8;
+}
+
+.status-started {
+    color: var(--font-color);
+}
+
+.status-finished {
+    color: var(--font-color);
+}
+
+.simul__section-title {
+    margin: 0 0 0.85rem;
+    font-size: 1.2rem;
+}
+
+.simul .results {
+    display: flex;
+    align-items: center;
+    margin: 0 0 1.15rem;
+    padding-inline: 0.5rem;
+}
+
+.simul .results > div {
+    flex: 1 1 25%;
+    text-align: center;
+}
+
+.simul .results .number {
+    font-size: 2.7rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.simul .results .text {
+    margin-top: 0.15rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    color: var(--link-color);
+    letter-spacing: 0.03em;
+}
+
+.simul__games {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.85rem 1rem;
+}
+
+.simul__games a {
+    display: flex;
+    flex-flow: column;
+    color: var(--font-color);
+    text-decoration: none;
+    gap: 0.15rem;
+    width: max-content;
+    max-width: 100%;
+}
+
+.simul__games .mini-game {
+    box-shadow: inset 0 0 0 1px var(--bg-color2);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.simul__games a:hover .mini-game {
+    box-shadow: inset 0 0 0 2px var(--link-color-blue);
+}
+
+.simul__games a.host-current {
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--green-switch) 24%, transparent);
+    box-shadow: 0 0 0 0.3rem color-mix(in srgb, var(--green-switch) 24%, transparent);
+}
+
+.simul__games .mini-game__player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+}
+
+.simul__games .mini-game__user {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--link-color);
+}
+
+.simul__games .mini-game__user.host {
+    color: var(--font-color);
+}
+
+.simul__games .mini-game__result {
+    min-width: 1ch;
+    font-weight: 700;
+}
+
+@media (min-width: 800px) {
+    .simul {
+        grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+        grid-template-areas: 'side main';
+    }
+
+    .simul:not(.simul-created) {
+        grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 799px) {
+    .simul .box__top h1 {
+        font-size: 1.7rem;
+    }
+
+    .simul .results {
+        flex-wrap: wrap;
+        row-gap: 1rem;
+    }
+
+    .simul .results > div {
+        flex-basis: 50%;
+    }
+
+    .simul .halves {
+        flex-direction: column;
+    }
+
+    .simul .half {
+        flex-basis: auto;
+    }
+
+    .simul .half:first-child {
+        border-inline-end: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .simul__games {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .simul-list .slist td:first-child,
+    .simul-list .slist td.infos,
+    .simul-history .slist td:first-child,
+    .simul-history .slist td.infos,
+    .simul-history .slist th:first-child,
+    .simul-history .slist th:nth-child(3) {
+        display: none;
+    }
+
+    .simul-list .slist td,
+    .simul-history .slist td {
+        padding: 0.7rem 0.45rem;
+    }
+
+    .simul-list .slist td.header,
+    .simul-history .slist td.header {
+        padding: 0;
+    }
+
+    .simul-list .slist td.header a,
+    .simul-history .slist td.header a {
+        padding: 0.7rem;
+    }
+
+    .simul-list .header a .name,
+    .simul-history .header a .name {
+        font-size: 1.25em;
+    }
+
+    .simul-list .slist td:last-child,
+    .simul-history .simul-history__score {
+        white-space: nowrap;
+    }
+}
+
+/* Searchable multi-variant picker for Simul forms. */
+.simul-new .variant-picker {
+    position: relative;
+}
+
+.simul-new .variant-picker-source {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.simul-new .variant-picker-results {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    max-height: 24rem;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+}
+
+.simul-new .variant-picker-group {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0.45rem 0.75rem 0.3rem;
+    color: var(--button-text);
+    background: var(--bg-color2);
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.simul-new .variant-picker-option {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    border-radius: 0;
+    color: inherit;
+    background: var(--bg-input);
+    text-align: left;
+    cursor: pointer;
+}
+
+.simul-new .variant-picker-option:hover,
+.simul-new .variant-picker-option.is-active {
+    background: var(--bg-color2);
+}
+
+.simul-new .variant-picker-option[aria-selected="true"] .variant-picker-option-name {
+    font-weight: bold;
+}
+
+.simul-new .variant-picker-option-key {
+    flex: 0 1 auto;
+    overflow: hidden;
+    color: var(--button-text);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.simul-new .variant-picker-hint {
+    padding: 0.65rem 0.75rem;
+    color: var(--button-text);
+    background: var(--bg-input);
+    font-size: 0.85rem;
+}
+
+.simul-variant-picker__selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.simul-variant-picker__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.55rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--bg-color1);
+    color: var(--font-color);
+    cursor: pointer;
+}
+
+.simul-variant-picker__chip:disabled {
+    color: var(--font-color);
+    cursor: default;
+    opacity: 0.85;
+}
+
+.simul-variant-picker__remove {
+    font-size: 1.15em;
+    line-height: 1;
+}
+
+@media (max-width: 600px) {
+    .simul-new .variant-picker-results {
+        max-height: 18rem;
+    }
+
+    .simul-new .variant-picker-option-key {
+        max-width: 42%;
+    }
+}
+
+.simul__join-variant {
+    max-width: min(18rem, 100%);
+    padding: 0.55em 0.7em;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color2);
+    color: var(--font-color);
+}
+
+
+/* Hosted simul history */
+.simul-history {
+    grid-area: main;
+    max-width: 900px;
+    width: 100%;
+    margin-inline: auto;
+}
+
+.simul-history__count {
+    font-size: 1.25em;
+}
+
+.simul-history__score {
+    white-space: nowrap;
+}
+
+.simul-history__empty {
+    padding: 2rem 0;
+}
+
+.simul-history__pagination {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.simul-history__pagination a {
+    font-weight: 600;
+}

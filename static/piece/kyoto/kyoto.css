@@ -1,0 +1,59 @@
+.kyoto piece {
+    --ctk-shadow-size: max(
+        calc(var(--cg-width) / var(--cg-board-files, var(--files)) * 0.0385),
+        calc(var(--cg-height) / var(--cg-board-ranks, var(--ranks)) * 0.03333)
+    );
+    filter: drop-shadow(2px 2px 2px #000);
+    filter: drop-shadow(
+        var(--ctk-shadow-size)
+        var(--ctk-shadow-size)
+        var(--ctk-shadow-size)
+        #000
+    );
+}
+.kyoto piece::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.kyoto piece.enemy::before {
+    transform: rotate(180deg);
+}
+.kyoto piece.p-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0FUKyoto.svg');
+}
+/* rook */
+.kyoto piece.pp-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0HI.svg');
+}
+.kyoto piece.n-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0KE.svg');
+}
+/* gold */
+.kyoto piece.pn-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0KI.svg');
+}
+.kyoto piece.l-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0KY.svg');
+}
+/* tokin */
+.kyoto piece.pl-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0TOKyoto.svg');
+}
+.kyoto piece.s-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0GI.svg');
+}
+/* bishop */
+.kyoto piece.ps-piece::before {
+    background-image: url('../../images/pieces/shogi/ctk/0KA.svg');
+}
+.kyoto piece.k-piece.white::before {
+    background-image: url('../../images/pieces/shogi/ctk/0GY.svg');
+}
+.kyoto piece.k-piece.black::before {
+    background-image: url('../../images/pieces/shogi/ctk/0OU.svg');
+}

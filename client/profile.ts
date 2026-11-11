@@ -1,0 +1,550 @@
+import { h, VNode } from 'snabbdom';
+
+import { Chessground } from 'chessgroundx';
+import * as cg from 'chessgroundx/types';
+
+import { _, ngettext, pgettext, languageSettings } from './i18n';
+import { alertDialog } from './alertDialog';
+import { ensureCataloguedVariantsLoaded, getLastMoveFen, VARIANTS } from './variants';
+import { patch } from './document';
+import { updateTimeago } from './datetime';
+import { infiniteScroll } from './infiniteScroll';
+import { boardSettings } from './boardSettings';
+import { alternateStartName, timeControlStr } from './view';
+import { PyChessModel } from './types';
+import { Ceval } from './messages';
+import { aiDisplayName, aiLevel, gameType, result, renderRdiff } from './result';
+import { renderBugTeamInfo, renderGameBoardsBug } from '@/two-board/profile';
+import { displayUsername, userLink } from './user';
+import { bindBoardResize, sizeMiniBoardHost } from './miniBoard';
+
+export interface Game {
+    _id: string; // mongodb document id
+    z: number; // chess960 (0/1)
+    v: string; // variant name
+    f: cg.FEN; // FEN
+    fp: cg.FEN; // FEN partner/second board B in case of bughouse
+
+    lm: string; // last move
+    lmB: string; // last move
+
+    b: number; // TC base
+    i: number; // TC increment
+    bp: number; // TC byoyomi period
+
+    y: number; // casual/rated/imported/correspondence (0/1/2/3)
+    c: boolean; // correspondence game
+    d: string; // datetime
+
+    tid?: string; // tournament id
+    tn?: string; // tournament name
+
+    wb?: boolean; // white berserk
+    bb?: boolean; // black berserk
+
+    us: string[]; // users (wplayer name, bplayer name) or in case of bughouse: board A wplayer name, board A bplayer name, board B wplayer name, board B bplayer name
+    wt: string; // white title
+    bt: string; // black title
+
+    wtB: string; // white title board B in case of bughouse
+    btB: string; // black title board B in case of bughouse
+
+    x: number; // Fairy level
+    p0: Player; // white performance rating (rating, diff)
+    p1: Player; // black performance rating (rating, diff)
+    s: number; // game status range(-2, 14) as CREATED, STARTED, ABORTED, MATE, ... see in const.py
+    r: string; // game result string (1-0, 0-1, 1/2-1/2, *)
+    m: string[]; // moves in compressed format as they are stored in mongo. Only used for count of moves here
+    a: Ceval[]; // analysis
+
+    initialFen: string;
+}
+
+interface Player {
+    e: string;
+    d: number;
+}
+
+function tournamentInfo(game: Game) {
+    let elements = [h('info-date', { attrs: { timestamp: game['d'] } })];
+    if (game['tid']) {
+        elements.push(h('span', ' • '));
+        elements.push(h('a.icon.icon-trophy', { attrs: { href: '/tournament/' + game['tid'] } }, game['tn']));
+    }
+    return elements;
+}
+
+export function gameListView(sentinel: VNode): VNode[] {
+    return [h('table#games'), sentinel];
+}
+
+export async function loadGameVariantDefinitions(games: Game[]): Promise<void> {
+    const names = [...new Set(games.map(game => game.v))].filter(name => !VARIANTS[name]);
+    if (!names.length) return;
+    try {
+        await ensureCataloguedVariantsLoaded(names);
+    } catch (error) {
+        console.warn('Failed to load game variant metadata', error);
+    }
+}
+
+export function renderGames(model: PyChessModel, games: Game[]) {
+    const rows = games.map(game => {
+        const variant = VARIANTS[game.v];
+        // Archived or private historical variants may not be available via the
+        // public metadata API. Keep a usable link instead of failing rendering.
+        if (!variant) {
+            return h('tr', { attrs: { 'data-game-id': game._id } }, [
+                h('td', [h('a', { attrs: { href: '/' + game._id } }, game.v)]),
+            ]);
+        }
+        const chess960 = game.z === 1;
+        const tc = timeControlStr(game['b'], game['i'], game['bp'], game['c'] === true ? game['b'] : 0);
+        const altStartName = alternateStartName(variant, game.initialFen);
+        const isBug = variant.twoBoards;
+        let teamFirst,
+            teamSecond = '';
+        if (isBug) {
+            teamFirst = displayUsername(game['us'][0]) + '+' + displayUsername(game['us'][3]);
+            teamSecond = displayUsername(game['us'][2]) + '+' + displayUsername(game['us'][1]);
+        }
+        let lastMove, fen;
+        [lastMove, fen] = getLastMoveFen(variant.name, game.lm, game.f);
+        return h('tr', { attrs: { 'data-game-id': game._id } }, [
+            h('a', { attrs: { href: '/' + game['_id'] } }, [
+                h(
+                    'td.board',
+                    { class: { 'with-pockets': !!variant.pocket, bug: isBug } },
+                    isBug
+                        ? renderGameBoardsBug(game, model['profileid'])
+                        : [
+                              h(`selection.${variant.boardFamily}.${variant.pieceFamily}.${variant.ui.boardMark}`, [
+                                  h(`div.cg-wrap.${variant.board.cg}.mini`, {
+                                      hook: {
+                                          insert: vnode => {
+                                              const boardWrap = vnode.elm as HTMLElement;
+                                              const boardHost = sizeMiniBoardHost(boardWrap);
+                                              boardSettings.updateScopedBoardStyle(variant, vnode.elm as Element);
+                                              boardSettings.updateScopedPieceStyle(
+                                                  variant,
+                                                  vnode.elm as Element,
+                                                  game.initialFen,
+                                              );
+                                              const chessground = Chessground(boardWrap, {
+                                                  coordinates: false,
+                                                  viewOnly: true,
+                                                  fen: fen,
+                                                  lastMove: lastMove,
+                                                  dimensions: variant.board.dimensions,
+                                                  addDimensionsCssVarsTo: boardHost,
+                                                  pocketRoles: variant.pocket?.roles,
+                                              });
+                                              const unbindResize = bindBoardResize(chessground);
+                                              (vnode.data as { miniBoardCleanup?: () => void }).miniBoardCleanup = () => {
+                                                  unbindResize();
+                                                  chessground.destroy();
+                                              };
+                                          },
+                                          destroy: vnode =>
+                                              (vnode.data as { miniBoardCleanup?: () => void }).miniBoardCleanup?.(),
+                                      },
+                                  }),
+                              ]),
+                          ],
+                ),
+                h('td.games-info', [
+                    h('div.info0.games.icon', { attrs: { 'data-icon': variant.icon(chess960) } }, [
+                        // h('div.info1.icon', { attrs: { "data-icon": (game["z"] === 1) ? "V" : "" } }),
+                        h('div.info2', [
+                            h('div.tc', tc + ' • ' + gameType(game['y']) + ' • ' + variant.displayName(chess960)),
+                            h('div', altStartName ? altStartName : ''),
+                            h('div', tournamentInfo(game)),
+                        ]),
+                    ]),
+                    h('div.info-middle', [
+                        h('div.versus', { class: { bug: isBug } }, [
+                            h(
+                                'player.left',
+                                { class: { bug: isBug } },
+                                isBug
+                                    ? renderBugTeamInfo(game, 0)
+                                    : [
+                                          userLink(aiDisplayName(game['us'][0], game.v), [
+                                              h('player-title', game['wt'] ? ' ' + game['wt'] + ' ' : ''),
+                                              displayUsername(aiDisplayName(game['us'][0], game.v)) +
+                                                  aiLevel(game['us'][0], game['x']),
+                                          ]),
+                                          h('br'),
+                                          game['wb'] === true ? h('icon.icon-berserk') : '',
+                                          game['p0'] === undefined ? '' : game['p0']['e'] + ' ',
+                                          game['p0'] === undefined ? '' : renderRdiff(game['p0']['d']),
+                                      ],
+                            ),
+                            h('vs-swords.icon', { attrs: { 'data-icon': '"' } }),
+                            h(
+                                'player.right',
+                                { class: { bug: isBug } },
+                                isBug
+                                    ? renderBugTeamInfo(game, 1)
+                                    : [
+                                          userLink(aiDisplayName(game['us'][1], game.v), [
+                                              h('player-title', game['bt'] ? ' ' + game['bt'] + ' ' : ''),
+                                              displayUsername(aiDisplayName(game['us'][1], game.v)) +
+                                                  aiLevel(game['us'][1], game['x']),
+                                          ]),
+                                          h('br'),
+                                          game['bb'] === true ? h('icon.icon-berserk') : '',
+                                          game['p1'] === undefined ? '' : game['p1']['e'] + ' ',
+                                          game['p1'] === undefined ? '' : renderRdiff(game['p1']['d']),
+                                      ],
+                            ),
+                        ]),
+                        h(
+                            'div.info-result',
+                            {
+                                class: {
+                                    win: isWinClass(model, game),
+                                    lose:
+                                        !!model['profileid'] &&
+                                        ['1-0', '0-1'].includes(game['r']) &&
+                                        !isWinClass(model, game),
+                                },
+                            },
+                            result(variant, game['s'], game['r'], teamFirst, teamSecond),
+                        ),
+                    ]),
+                    h('div.info0.games', [
+                        h('div', [
+                            h(
+                                'div.info0',
+                                game['m'] === undefined ? '' : ngettext('%1 move', '%1 moves', game['m'].length),
+                            ),
+                            h(
+                                'div.info0',
+                                game['a'] === undefined
+                                    ? ''
+                                    : [
+                                          h('span.icon', { attrs: { 'data-icon': '3' } }),
+                                          _('Computer analysis available'),
+                                      ],
+                            ),
+                        ]),
+                    ]),
+                ]),
+            ]),
+        ]);
+    });
+    return [h('tbody', rows)];
+}
+
+function isWinClass(model: PyChessModel, game: Game): boolean {
+    if (!model['profileid']) return false;
+    const variant = VARIANTS[game.v];
+    if (variant?.twoBoards) {
+        const team = game['us'][0] === model['profileid'] || game['us'][3] === model['profileid'] ? 0 : 1;
+        return (game['r'] === '1-0' && team === 0) || (game['r'] === '0-1' && team === 1);
+    } else {
+        return (
+            (game['r'] === '1-0' && game['us'][0] === model['profileid']) ||
+            (game['r'] === '0-1' && game['us'][1] === model['profileid'])
+        );
+    }
+}
+
+export function appendGames(model: PyChessModel, games: Game[]): void {
+    const table = document.getElementById('games');
+    if (!table) return;
+    const seen = new Set(Array.from(table.querySelectorAll('[data-game-id]'), row => row.getAttribute('data-game-id')));
+    const fresh = games.filter(game => {
+        if (seen.has(game._id)) return false;
+        seen.add(game._id);
+        return true;
+    });
+    if (!fresh.length) return;
+    // Mount each batch in the live table so board insert hooks can measure it.
+    const body = document.createElement('tbody');
+    table.append(body);
+    patch(body, renderGames(model, fresh)[0]);
+    updateTimeago();
+}
+
+async function loadGames(model: PyChessModel, page: number): Promise<boolean> {
+    const lang = languageSettings.value;
+
+    const params = new URLSearchParams({ l: lang, p: String(page) });
+    // Tab / scope filter (mutually exclusive by the nature of the profile tabs).
+    if (model.level) {
+        params.set('filter', 'loss');
+        params.set('x', '8');
+    } else if (model.rated === '1') {
+        params.set('filter', 'rated');
+    } else if (model.rated === '2') {
+        params.set('filter', 'import');
+    } else if (model.rated === '-2') {
+        params.set('filter', 'playing');
+    } else if (model.rated === '-1') {
+        params.set('filter', 'me');
+    }
+    // The variant filter is independent and combines with the tab above (AND).
+    // Fixes #648: choosing a variant no longer resets the Rated/Casual/... tab.
+    if (model.variant) {
+        params.set('variant', model.variant);
+    }
+    const url = `/api/games/user/${encodeURIComponent(model['profileid'])}?${params.toString()}`;
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Games: ${response.status}`);
+    const games = (await response.json()) as Game[];
+    // The API returns an empty object for visitors without game-list access.
+    if (!Array.isArray(games)) return false;
+    await loadGameVariantDefinitions(games);
+    appendGames(model, games);
+    return games.length > 0;
+}
+
+function enableRestrictedGameLoading(model: PyChessModel) {
+    const gate = document.getElementById('profile-games-gate');
+    if (gate instanceof Element) {
+        patch(
+            gate,
+            h('div#sentinel', { hook: { insert: vnode => observeSentinel(vnode, model) } }),
+        );
+    }
+}
+
+function restrictedGameListView(model: PyChessModel): VNode[] {
+    return [
+        h('table#games'),
+        h('div#profile-games-gate', [
+            h(
+                'button.button',
+                {
+                    attrs: { type: 'button' },
+                    on: { click: () => enableRestrictedGameLoading(model) },
+                },
+                _('Load games'),
+            ),
+        ]),
+    ];
+}
+
+function observeSentinel(vnode: VNode, model: PyChessModel) {
+    let page = 0;
+    const destroy = infiniteScroll(vnode.elm as HTMLElement, {
+        load: async () => {
+            const hasMore = await loadGames(model, page);
+            page += 1;
+            return hasMore;
+        },
+    });
+    vnode.data!.hook!.destroy = destroy;
+}
+
+export function profileView(model: PyChessModel) {
+    boardSettings.assetURL = model.assetURL;
+
+    const profileId = model['profileid'];
+    const rated = model['rated'];
+    // When a variant is active, every tab link keeps it so the two filters
+    // combine (AND) instead of resetting each other. Issue #648.
+    const variantQ = model.variant ? '?variant=' + model.variant : '';
+
+    const blockEl = document.getElementById('block') as HTMLElement;
+    if (blockEl !== null) renderBlock('block', profileId);
+
+    const unblockEl = document.getElementById('unblock') as HTMLElement;
+    if (unblockEl !== null) renderUnblock('unblock', profileId);
+
+    const followEl = document.getElementById('follow') as HTMLElement;
+    if (followEl !== null) renderFollow('follow', profileId);
+
+    const unfollowEl = document.getElementById('unfollow') as HTMLElement;
+    if (unfollowEl !== null) renderUnfollow('unfollow', profileId);
+
+    let tabs: VNode[] = [];
+    tabs.push(
+        h('div.sub-ratings', [
+            h('a', { attrs: { href: '/@/' + profileId + variantQ }, class: { active: rated === 'None' } }, _('Games')),
+        ]),
+    );
+    if (model['username'] !== profileId) {
+        tabs.push(
+            h('div.sub-ratings', [
+                h(
+                    'a',
+                    { attrs: { href: '/@/' + profileId + '/me' + variantQ }, class: { active: rated === '-1' } },
+                    _('Games with you'),
+                ),
+            ]),
+        );
+    }
+    tabs.push(
+        h('div.sub-ratings', [
+            h(
+                'a',
+                { attrs: { href: '/@/' + profileId + '/rated' + variantQ }, class: { active: rated === '1' } },
+                pgettext('UsePluralFormIfNeeded', 'Rated'),
+            ),
+        ]),
+    );
+    tabs.push(
+        h('div.sub-ratings', [
+            h(
+                'a',
+                { attrs: { href: '/@/' + profileId + '/playing' + variantQ }, class: { active: rated === '-2' } },
+                pgettext('UsePluralFormIfNeeded', 'Playing'),
+            ),
+        ]),
+    );
+    tabs.push(
+        h('div.sub-ratings', [
+            h('a', { attrs: { href: '/@/' + profileId + '/import' + variantQ }, class: { active: rated === '2' } }, _('Imported')),
+        ]),
+    );
+
+    return [
+        h('div.filter-tabs', tabs),
+        ...(model.profileRestricted
+            ? restrictedGameListView(model)
+            : gameListView(h('div#sentinel', { hook: { insert: vnode => observeSentinel(vnode, model) } }))),
+    ];
+}
+
+function renderBlock(id: string, profileId: string) {
+    const el = document.getElementById(id) as HTMLElement;
+    if (el !== null) {
+        patch(
+            el,
+            h(
+                'a#block.icon.icon-ban',
+                {
+                    attrs: { href: '/api/' + profileId + '/block', title: _('Block') },
+                    on: { click: (e: Event) => postBlock(e, profileId, true) },
+                },
+                _('Block'),
+            ),
+        );
+    }
+}
+
+function renderUnblock(id: string, profileId: string) {
+    const el = document.getElementById(id) as HTMLElement;
+    if (el !== null) {
+        patch(
+            el,
+            h(
+                'a#unblock.icon.icon-ban',
+                {
+                    attrs: { href: '/api/' + profileId + '/block', title: _('Unblock') },
+                    on: { click: (e: Event) => postBlock(e, profileId, false) },
+                },
+                _('Unblock'),
+            ),
+        );
+    }
+}
+
+function renderFollow(id: string, profileId: string) {
+    const el = document.getElementById(id) as HTMLElement;
+    if (el !== null) {
+        patch(
+            el,
+            h(
+                'a#follow.icon.icon-thumbs-o-up',
+                {
+                    attrs: { href: '/api/' + profileId + '/follow', title: _('Follow') },
+                    on: { click: (e: Event) => postFollow(e, profileId, true) },
+                },
+                _('Follow'),
+            ),
+        );
+    }
+}
+
+function renderUnfollow(id: string, profileId: string) {
+    const el = document.getElementById(id) as HTMLElement;
+    if (el !== null) {
+        patch(
+            el,
+            h(
+                'a#unfollow.icon.icon-thumbs-o-up',
+                {
+                    attrs: { href: '/api/' + profileId + '/follow', title: _('Unfollow') },
+                    on: { click: (e: Event) => postFollow(e, profileId, false) },
+                },
+                _('Following'),
+            ),
+        );
+    }
+}
+
+function postFollow(e: Event, profileId: string, follow: boolean) {
+    e.preventDefault();
+    const XHR = new XMLHttpRequest();
+    const FD = new FormData();
+    FD.append('follow', `${follow}`);
+
+    XHR.onreadystatechange = function () {
+        if (this.readyState === 4 && this.status === 200) {
+            const response = JSON.parse(this.responseText);
+            if (response['error'] !== undefined) {
+                console.log(response['error']);
+            } else {
+                if (follow) {
+                    renderUnfollow('follow', profileId);
+                } else {
+                    renderFollow('unfollow', profileId);
+                }
+            }
+        }
+    };
+    XHR.open('POST', `/api/${profileId}/follow`, true);
+    XHR.send(FD);
+    return false;
+}
+
+function postBlock(e: Event, profileId: string, block: boolean) {
+    e.preventDefault();
+    const XHR = new XMLHttpRequest();
+    const FD = new FormData();
+    FD.append('block', `${block}`);
+
+    function responseErrorMessage(): string {
+        if (!XHR.responseText) return _('Could not update block state.');
+        try {
+            const response = JSON.parse(XHR.responseText);
+            if (response['error'] === 'blocked_quota_reached') {
+                return _('Block limit reached.');
+            }
+        } catch {
+            // Ignore malformed responses and fall back to a generic message.
+        }
+        return _('Could not update block state.');
+    }
+
+    XHR.onreadystatechange = function () {
+        if (this.readyState !== 4) return;
+
+        if (this.status !== 200) {
+            void alertDialog({ text: responseErrorMessage() });
+            return;
+        }
+
+        const response = this.responseText ? JSON.parse(this.responseText) : {};
+        if (response['error'] !== undefined) {
+            void alertDialog({ text: responseErrorMessage() });
+        } else {
+            if (block) {
+                renderUnblock('block', profileId);
+            } else {
+                renderBlock('unblock', profileId);
+            }
+        }
+    };
+    XHR.onerror = function () {
+        void alertDialog({ text: _('Could not update block state.') });
+    };
+    XHR.open('POST', `/api/${profileId}/block`, true);
+    XHR.send(FD);
+    return false;
+}

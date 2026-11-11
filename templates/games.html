@@ -1,0 +1,23 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="page-menu">
+<h1 class="sr-only">{% trans %}Games{% endtrans %}</h1>
+<aside aria-label="{% trans %}Variants{% endtrans %}">
+    <ul class="guide">
+    {% for key in variants %}
+    <li>
+        <a class="icon {{ groups[key] }}" data-icon="{{ icons[key] }}" href="{{ home }}/games/{{ key }}">{{ variant_display_name(key) }}</a>
+    </li>
+    {% endfor %}
+    </ul>
+</aside>
+<div>
+<div id="placeholder"></div>
+</div>
+</main>
+</div>
+{% endblock %}
+{% block js %}
+    <script src="{{ js }}"></script>
+{% endblock %}

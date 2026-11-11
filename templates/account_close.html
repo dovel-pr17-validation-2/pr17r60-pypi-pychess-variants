@@ -1,0 +1,40 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="page-menu legal-page">
+<aside></aside>
+<div class="guide legal-doc account-action">
+<section class="account-action__panel">
+    <h1>Close account</h1>
+    <p class="account-action__lead">
+    Closing disables account access and logs you out. Public game archive records may remain.
+    </p>
+    <p>
+    Closing also removes your team memberships and archives teams you created. If you later
+    change your mind, sign in with the same OAuth provider and follow the reopen flow. Team
+    memberships are not restored automatically; an archived team can be reopened by a site admin
+    after your account is enabled again. If you close the account again after reopening it,
+    automatic account reopening is no longer available.
+    </p>
+    <form class="account-action__form" method="post" action="/account/close">
+        <div class="account-action__field">
+            <label class="account-action__label" for="account-close-confirm-username">Type your username to confirm</label>
+            <input id="account-close-confirm-username" class="account-action__input" type="text" name="confirm_username" required>
+        </div>
+        <label class="account-action__check">
+            <input type="checkbox" name="understand" required>
+            I understand this closes my account access.
+        </label>
+        <div class="account-action__actions">
+            <button class="account-action__button account-action__button--warn" type="submit">Close my account</button>
+            <a class="account-action__button account-action__button--secondary" href="/account/delete">Need full deletion/anonymization instead?</a>
+        </div>
+    </form>
+</section>
+</div>
+</main>
+</div>
+{% endblock %}
+{% block js %}
+<script src="{{ js }}"></script>
+{% endblock %}

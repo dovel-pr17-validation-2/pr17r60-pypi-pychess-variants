@@ -1,0 +1,353 @@
+#main-wrap {
+  --main-max-width: auto;
+}
+.round-app {
+    grid-area: app;
+    display: grid;
+    grid-column-gap: 2vmin;
+}
+
+#aliceboard {
+    display: none;
+    grid-area: alice-board;
+    position: relative;
+}
+
+.alice-split-icon {
+    font-size: 1.25em;
+    line-height: 1;
+}
+
+.round-app.alice-split #aliceboard {
+    display: block;
+    cursor: pointer;
+    animation: alice-board-separate 220ms ease-out;
+}
+
+.round-app.alice-split #mainboard::after,
+.round-app.alice-split #aliceboard::after {
+    content: attr(data-alice-board);
+    position: absolute;
+    top: 0.35rem;
+    left: 0.35rem;
+    z-index: 3;
+    min-width: 1.4rem;
+    padding: 0.1rem 0.25rem;
+    border-radius: 3px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    font-weight: bold;
+    text-align: center;
+    pointer-events: none;
+}
+
+.round-app.alice-split #mainboard {
+    box-shadow: 0 0 0 3px var(--good);
+}
+
+@keyframes alice-board-separate {
+    from {
+        opacity: 0;
+        transform: translateX(-25%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .round-app.alice-split #aliceboard {
+        animation: none;
+    }
+}
+
+@media (max-width: 799px) {
+    /* Keep the current correspondence game's details above the other ongoing game boards. */
+    #pychess-variants[data-view="round"][data-corr="True"] .round {
+        grid-template-areas: 'app' 'side' 'uboard' 'uside';
+    }
+}
+
+/* A mobile keyboard can make the layout viewport wider than it is tall.
+   Keep the single-column game layout whenever the desktop columns cannot fit. */
+@media (max-width: 799px) {
+    #main-wrap {
+        --main-max-width: 100%;
+    }
+    .round-app {
+        grid-template-rows: auto auto 36px auto auto min-content auto auto 36px auto auto auto auto auto auto;
+        grid-template-areas: 'move-controls' 'mat-top' 'user-top' 'expi-top' 'pocket-top' 'board' 'janggi-setup' 'pocket-bot' 'user-bot' 'expi-bot' 'mat-bot' 'game-controls' 'moves' 'uboard' 'uleft';
+    }
+    .round-app.alice-split {
+        grid-template-rows: auto auto 36px auto auto min-content min-content auto auto 36px auto auto auto auto auto auto;
+        grid-template-areas: 'move-controls' 'mat-top' 'user-top' 'expi-top' 'pocket-top' 'board' 'alice-board' 'janggi-setup' 'pocket-bot' 'user-bot' 'expi-bot' 'mat-bot' 'game-controls' 'moves' 'uboard' 'uleft';
+    }
+    .round-app.alice-split #aliceboard {
+        animation-name: alice-board-separate-mobile;
+    }
+    under-left {
+        display: none;
+    }
+}
+
+@keyframes alice-board-separate-mobile {
+    from {
+        opacity: 0;
+        transform: translateY(-15%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (min-width: 800px) {
+    .round-app {
+        grid-template-columns: minmax(calc(70vmin * var(--board-scale)), calc(100vh * var(--board-scale) - calc(var(--site-header-height) + var(--site-header-margin)) - 3rem)) minmax(240px, 400px);
+        grid-template-rows: min-content auto auto min-content auto auto auto auto auto auto auto min-content auto auto min-content auto;
+        grid-template-areas: 'board .' 'board mat-top' 'board pocket-top' 'board clock-top' 'board expi-top' 'board user-top' 'board move-controls' 'board moves' 'board game-controls' 'board user-bot' 'board expi-bot' 'board clock-bot' 'board pocket-bot' 'board mat-bot' 'board .' 'janggi-setup .';
+    }
+    .round-app.alice-split {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(240px, 400px);
+        grid-template-areas: 'board alice-board .' 'board alice-board mat-top' 'board alice-board pocket-top' 'board alice-board clock-top' 'board alice-board expi-top' 'board alice-board user-top' 'board alice-board move-controls' 'board alice-board moves' 'board alice-board game-controls' 'board alice-board user-bot' 'board alice-board expi-bot' 'board alice-board clock-bot' 'board alice-board pocket-bot' 'board alice-board mat-bot' 'board alice-board .' 'janggi-setup janggi-setup .';
+    }
+    #janggi-setup-buttons:not(:empty) {
+        margin-top: 23px;
+    }
+}
+
+.cg-wrap svg {
+    position: absolute;
+}
+
+/* Janggi setup buttons */
+#janggi-setup-buttons {
+    grid-area: janggi-setup;
+    display: grid;
+    grid-template-columns: 22% 12% 22%;
+    grid-gap: 11%;
+    justify-content: center;
+}
+#janggi-setup-buttons button {
+    border-radius:3px;
+    border: 1px solid var(--janggi-setup);
+    height: 40px;
+    color: var(--font-color);
+    background: var(--bg-color2);
+}
+
+#janggi-setup-buttons > button:nth-child(2):hover {
+    color:#fff;
+    background: var(--green-hover);
+}
+#janggi-setup-buttons > #flipLeft:hover, #janggi-setup-buttons > #flipRight:hover {
+    background: var(--rusty);
+}
+
+/* draw/rematch offer dialog */
+#offer-dialog {
+    grid-area: game-controls;
+}
+div.dcontrols {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    align-content: center;
+    background: var(--bg-color2);
+    border-bottom: 1px solid var(--border-color);
+    line-height: 2em;
+}
+div.dcontrols .reject {
+    color: var(--bad);
+    font-size: 1.5rem;
+    width: 15%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg-color0);
+    cursor: pointer;
+}
+@keyframes flash-once {
+ from {
+  background: var(--rusty);
+  color: #fff;
+ }
+ to {
+  background: var(--bg-meta);
+  color: var(--font-color);
+ }
+}
+div.dcontrols {
+    animation: flash-once 1s ease-in;
+    border: none;
+    padding: 1px;
+}
+div.dcontrols button {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    line-height: inherit;
+}
+div.dcontrols .text {
+    align-self: center;
+    text-align: center;
+    flex: fit-content;
+}
+div.dcontrols .accept {
+    color: var(--good);
+    font-size: 1.2rem;
+    width: 15%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg-color0);
+    cursor: pointer;
+}
+
+/* game start expiration */
+.expiration {
+    font-size: 0.9rem;
+    justify-content: center;
+    line-height: 2;
+    background: var(--good);
+    color: #fff;
+}
+.expiration.emerg {
+    background: var(--bad);
+}
+.expiration strong {
+    font-size: 1rem;
+    margin: 0 0.3em 0 0.3em;
+}
+#expiration-top {
+    grid-area: expi-top;
+    border-top-right-radius: 3px;
+}
+#expiration-bottom {
+    grid-area: expi-bot;
+    border-bottom-right-radius: 3px;
+}
+@-webkit-keyframes bar-glider-anim {
+    0% {
+        transform: translateX(-1300px)
+    }
+    100% {
+        transform: translateX(2100px)
+    }
+}
+@keyframes bar-glider-anim {
+    0% {
+        transform: translateX(-1300px)
+    }
+    100% {
+        transform: translateX(2100px)
+    }
+}
+.bar-glider {
+    position:relative;
+    overflow:hidden
+}
+.bar-glider::after {
+    content:'';
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    width:70px;
+    background:linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.3));
+    -webkit-animation:bar-glider-anim 3s linear infinite;
+    animation:bar-glider-anim 3s linear infinite
+}
+
+@media (min-width: 800px) {
+    [data-zen="on"] .round-app {
+        /* Match the desktop grid areas, collapsing only the hidden player rows. */
+        grid-template-rows: min-content auto auto min-content auto 0 auto auto auto 0 auto min-content auto auto min-content auto;
+    }
+}
+@media (max-width: 799px) {
+    [data-zen="on"] .round-app {
+        grid-template-rows: auto auto 36px auto auto min-content auto auto 36px auto auto auto auto auto auto;
+    }
+    [data-zen="on"] .round-app.alice-split {
+        grid-template-rows: auto auto 36px auto auto min-content min-content auto auto 36px auto auto auto auto auto auto;
+    }
+}
+a#zen-button {
+    display: none;
+    border: none;
+    color: #fff;
+    background: var(--green-hover);
+    cursor: pointer;
+    text-transform: uppercase;
+    line-height: 1.5;
+    height: max-content;
+    transition: all 150ms;
+    border-bottom-right-radius: 3px;
+    opacity: 0.6;
+}
+a#zen-button:hover {
+    background: var(--green-switch);
+    opacity: 0.9;
+}
+.icon-check {
+    align-self: center;
+    padding: 0.5em 1em;
+}
+.icon-check::before {
+    opacity: 0.9;
+    margin-right: 0.4em;
+}
+[data-zen="on"] round-player0,
+[data-zen="on"] round-player1,
+[data-zen="on"] .sidebar-first,
+[data-zen="on"] .site-title-nav,
+[data-zen="on"] .crosstable,
+[data-zen="on"] move,
+[data-zen="on"] #spectators,
+[data-zen="on"] #btn-settings,
+[data-zen="on"] #username {
+    display: none;
+}
+[data-zen="on"] a#zen-button {
+    display: flex;
+}
+
+button.icon.icon-berserk {
+    border: none;
+    color: var(--font-color);
+    background-color: var(--bg-body);
+    font-size: 32px;
+    margin: 0;
+    padding: 0 0 0 4px;
+}
+.berserked {
+    display: flex;
+    margin-left: auto;
+}
+.berserked button.icon.icon-berserk {
+    color: var(--bad);
+}
+
+.clock.corr-clock {
+    font-size: 1.9em;
+    line-height: 1.5em;
+    padding: 0 2vmin;
+}
+
+.ongoing-games-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+}
+
+.ongoing-auto-skip {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: var(--font-color);
+    font-size: 0.95rem;
+}

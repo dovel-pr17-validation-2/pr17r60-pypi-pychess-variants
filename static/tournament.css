@@ -1,0 +1,1185 @@
+#main-wrap {
+    --main-max-width: auto;
+}
+.tour {
+    grid-area: main;
+    display: grid;
+    grid-gap: 2vmin;
+    grid-template-areas: 'main' 'side' 'uchat' 'table';
+}
+@media (max-width: 799px) {
+    #main-wrap {
+        --main-max-width: 100%;
+    }
+}
+@media (min-width: 800px) and (max-width: 1099px) {
+    .tour {
+        grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+        grid-template-areas: 'main side' 'main uchat' 'table table';
+        align-items: start;
+    }
+}
+@media (min-width: 1100px) {
+    .tour {
+        grid-template-columns: minmax(250px, 350px) minmax(500px, calc(100vh * 0.9 - calc(var(--site-header-height) + var(--site-header-margin)) - 3rem)) minmax(240px, 400px);
+        grid-template-rows: calc(100vh - calc(var(--site-header-height) + var(--site-header-margin)) - 2vmin - 3rem) auto;
+        grid-template-areas: 'side main table' 'uchat players table';
+    }
+}
+under-chat {
+    grid-area: uchat;
+}
+div.info0 {
+    margin-bottom: 3vmin;
+}
+#pychess-variants .tour aside.sidebar-first > .tournament-lifecycle {
+    display: flex;
+    gap: 0.6rem;
+    margin: -1.5vmin 0 2vmin;
+}
+#pychess-variants .tour aside.sidebar-first > .tournament-lifecycle:empty {
+    display: none;
+}
+#pychess-variants .tour aside.sidebar-first > .tournament-lifecycle > button {
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0.7em 0.8em;
+    font-size: 0.85em;
+}
+.user-link {
+    padding: 0;
+}
+.player .user-link {
+    padding: 8px;
+    white-space: nowrap;
+}
+.description {
+    max-height: 20vh;
+    overflow-y: auto;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    margin-bottom: 2vmin;
+}
+.description a {
+    color: var(--blue-hover);
+}
+.defender {
+    margin-bottom: 2vmin;
+}
+table#players {
+    grid-area: main;
+    margin-bottom: 3vmin;
+}
+div.tour-header {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    min-height: 7em;
+    padding: 0 3vmin;
+}
+div.tour-header h1 {
+    color: var(--gold);
+    flex: 9 1 auto;
+    margin: 0;
+    overflow: hidden;
+    text-align: center;
+}
+table#players, table#games {
+    width: 100%;
+    border: none;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+div.pager {
+    display: flex;
+    align-items: center;
+    flex-flow: row wrap;
+}
+span.page {
+    align-self: center;
+    padding: 3px;
+}
+.btn-controls {
+    display: flex;
+    position: relative;
+    background-color: var(--bg-color2);
+    box-shadow: var(--base-shadow);
+    height: 40px;
+}
+.btn-controls i {
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+.btn-controls button {
+    flex: 1;
+    border: none;
+    padding: 0.6em 1em;
+    font-size:0.8em;
+    background-color: var(--bg-color);
+    line-height: 1.3;
+}
+button#action {
+    height: auto;
+    margin: 0;
+    position: absolute;
+    right: 5px;
+    top: -3px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border-bottom: 5px solid #759900;
+    color: white;
+    background-color: #82bf56;
+    font-size:1.2em;
+    text-shadow: 0 -1px #759900;
+    transform: translate(0px, 0px);
+    transition: 0.2s all;
+}
+button#action::before {
+    margin-right: 0.4em;
+}
+button#action:hover {
+    filter: brightness(1.06);
+    background-color: var(--green-hover);
+}
+button#action:active {
+    transform:translate(0px, 5px);
+    border-bottom-width:1px;
+    text-shadow:0 0 #759900;
+    filter:brightness(1);
+}
+
+.players {
+    grid-area: main;
+    min-width: 0;
+}
+.tour-table {
+    grid-area: table;
+    align-self: flex-start;
+}
+table.players tr {
+    cursor: pointer;
+}
+table.players tr:nth-child(2n) {
+    background: var(--bg-color2);
+}
+table.pairings tr:nth-child(2n+1) {
+    background: var(--bg-color2);
+}
+table.players tr:hover, table.pairings tr:hover {
+    background-color: var(--game-hover);
+}
+table td {
+    padding: 1rem;
+    font-size: 14px;
+}
+td.rank {
+    padding: 1em 0.5em 1em 10px;
+}
+td.player {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+span.title {
+    padding-right: 5px;
+    color: var(--gold);
+}
+span.name {
+    padding-right: 5px;
+    white-space: nowrap;
+}
+td.sheet {
+    text-align: right;
+    padding-right: 0px;
+    padding-left: 0px;
+    width: 100%;
+}
+td.sheet > * {
+    display: inline-block;
+}
+td.sheet div {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-end;
+    gap: 0.1em;
+}
+div.janggi td.sheet div {
+    gap: 0.3em;
+}
+td.sheet score {
+    opacity: 0.7;
+}
+td.sheet.fixed-rounds score,
+td.sheet.fixed-rounds streak,
+td.sheet.fixed-rounds double {
+    display: inline-block;
+    min-width: 1.2em;
+    text-align: center;
+}
+td.sheet.fixed-rounds score.empty {
+    opacity: 0;
+}
+td.sheet streak {
+    color: var(--green-hover);
+}
+td.sheet double {
+    color: var(--gold);
+}
+fire {
+    color: var(--gold);
+}
+td.total {
+    text-align: right;
+    padding-left: 0px;
+    padding: 1rem;
+}
+td.berger {
+    text-align: right;
+    padding-left: 0.4rem;
+    white-space: nowrap;
+}
+strong.score {
+    padding-right: 8px;
+}
+.tour-table {
+    display: flex;
+    flex-flow: column;
+}
+#player table th {
+    text-align: left;
+    font-size: 14px;
+    font-weight: normal;
+}
+#player table td {
+    padding: 0.3em;
+    font-size: 14px;
+}
+#rr-crosstable {
+    width: 100%;
+}
+.r-table-wrap {
+    display: flex;
+    position: relative;
+    align-items: flex-start;
+    --rr-cell-size: 2.25rem;
+}
+.r-table-wrap table {
+    border-collapse: collapse;
+    width: auto;
+}
+.r-table-wrap th,
+.r-table-wrap td {
+    min-width: var(--rr-cell-size);
+    height: var(--rr-cell-size);
+    padding: 0;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    transition: background-color 120ms ease, color 120ms ease;
+}
+.r-table-wrap th {
+    background: var(--bg-color2);
+}
+#rr-crosstable .r-table-wrap-players th:first-child,
+#rr-crosstable .r-table-wrap-players td:first-child,
+#rr-crosstable .r-table-wrap-arrs th,
+#rr-crosstable .r-table-wrap-scores th,
+#rr-crosstable .r-table-wrap-scores td {
+    text-align: center;
+}
+#rr-crosstable .r-table-wrap-players td.player-name,
+#rr-crosstable .r-table-wrap-players th:nth-child(2) {
+    min-width: 10rem;
+    padding: 0 0.8rem;
+    text-align: left;
+}
+.r-table-wrap-players td.player-name .user-link {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+.r-table-wrap-players tr.selectable {
+    cursor: pointer;
+}
+.r-table-wrap-arrs {
+    overflow-x: auto;
+    flex: 0 1 auto;
+}
+.r-table-wrap-arrs table {
+    table-layout: fixed;
+}
+.r-table-wrap-arrs th,
+.r-table-wrap-arrs td {
+    width: var(--rr-cell-size);
+}
+.r-table-wrap-scores td,
+.r-table-wrap-scores th {
+    min-width: 3.5rem;
+    width: 3.5rem;
+}
+.r-table-wrap td.me,
+.r-table-wrap th.me {
+    background: color-mix(in srgb, var(--link-color) 14%, var(--bg-color1));
+}
+.r-table-wrap tr.hovered td,
+.r-table-wrap tr.hovered th,
+.r-table-wrap td.hovered,
+.r-table-wrap th.hovered {
+    background: color-mix(in srgb, var(--link-color-blue) 18%, transparent);
+}
+.r-table-wrap tr.selected-player td,
+.r-table-wrap tr.selected-player th {
+    background: color-mix(in srgb, var(--gold) 12%, var(--bg-color1));
+}
+.r-table-wrap tr.withdrawn td,
+.r-table-wrap tr.withdrawn th {
+    opacity: 0.7;
+}
+.r-table-wrap td.winner {
+    color: var(--gold);
+    font-weight: 700;
+}
+.r-table-wrap td.rr-cell {
+    position: relative;
+}
+.r-table-wrap td.rr-cell > div {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+.r-table-wrap td.rr-cell.actionable {
+    cursor: pointer;
+    background: var(--bg-color2);
+}
+.r-table-wrap td.rr-cell.selected {
+    outline: 2px solid var(--link-color);
+    outline-offset: -2px;
+}
+.r-table-wrap td.rr-cell.pending {
+    color: var(--font-color);
+}
+.r-table-wrap td.rr-cell.incoming {
+    background: color-mix(in srgb, var(--green) 18%, var(--bg-color1));
+}
+.r-table-wrap td.rr-cell.outgoing {
+    background: color-mix(in srgb, var(--gold) 18%, var(--bg-color1));
+}
+.r-table-wrap td.rr-cell.started {
+    background: color-mix(in srgb, var(--link-color) 16%, var(--bg-color1));
+}
+.r-table-wrap td.rr-cell.win {
+    color: var(--green);
+    font-weight: 700;
+}
+.r-table-wrap td.rr-cell.loss {
+    color: var(--c-error, #9f3a38);
+    font-weight: 700;
+}
+.r-table-wrap td.rr-cell.draw {
+    color: var(--link-color);
+    font-weight: 700;
+}
+.r-table-wrap td.rr-cell.empty {
+    background: var(--bg-color1);
+}
+.r-table-wrap td.rr-cell.hovered,
+.r-table-wrap tr.hovered td.rr-cell,
+.r-table-wrap tr.hovered td.rr-self,
+.r-table-wrap td.rr-self.hovered {
+    background: color-mix(in srgb, var(--link-color-blue) 18%, transparent);
+}
+.r-table-wrap td.rr-self::before,
+.r-table-wrap td.rr-self::after {
+    content: '';
+    position: absolute;
+    background: var(--font-color);
+    opacity: 0.6;
+    transform-origin: center;
+}
+.r-table-wrap td.rr-self::before {
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    transform: translateX(-50%) rotate(45deg);
+}
+.r-table-wrap td.rr-self::after {
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    transform: translateY(-50%) rotate(45deg);
+}
+#rr-nav {
+    margin: 0.2rem 0 1rem;
+    width: min(20rem, 100%);
+}
+#rr-nav > span {
+    padding: 0.45rem 0.2rem;
+}
+#rr-nav > span[aria-selected='true'] {
+    color: var(--rusty);
+}
+#rr-manage {
+    margin-top: 0.9rem;
+}
+#rr-manage .button {
+    width: 100%;
+}
+#rr-info-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.92em;
+}
+#createdBy {
+    margin-top: 0.35rem;
+    font-size: 0.92em;
+}
+#startsAt {
+    font-size: 0.92em;
+    white-space: nowrap;
+}
+#rr-management,
+#rr-challenges,
+#rr-selection {
+    margin-bottom: 1rem;
+}
+#rr-management h2,
+#rr-management h3,
+#rr-challenges h2,
+#rr-selection h2 {
+    margin: 0 0 0.6rem;
+}
+#rr-management table {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+#rr-management td.manage-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+#rr-management button.reject {
+    background: var(--c-error, #9f3a38);
+}
+#rr-management .rr-section-header,
+#rr-management .rr-kick-controls,
+#rr-selection .rr-detail-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+#rr-management .rr-section-header {
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+#rr-management .rr-kick-wrap {
+    margin-bottom: 1rem;
+}
+#rr-management .rr-kick-wrap label {
+    display: block;
+    margin-bottom: 0.4rem;
+}
+#rr-management .rr-kick-controls input {
+    flex: 1;
+}
+#rr-management .rr-kick-controls button.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+#rr-body .rr-empty {
+    opacity: 0.75;
+    padding: 1.25rem;
+    text-align: center;
+}
+#rr-selection .rr-detail-actions {
+    margin-top: 1rem;
+}
+.rr-modal-content.rr-arr-modal {
+    position: relative;
+    width: min(30rem, 100%);
+    background: var(--modal-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.28);
+    color: var(--font-color);
+    opacity: 1;
+    overflow: hidden;
+    padding: 0;
+}
+.rr-arr-header {
+    position: relative;
+    background: var(--bg-color2);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+}
+.rr-arr-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+.rr-arr-header .close {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.65rem;
+    z-index: 2;
+}
+.rr-arr-users {
+    display: flex;
+    flex-direction: column;
+}
+.rr-arr-user {
+    width: 100%;
+    padding: 1rem;
+}
+.rr-arr-user-bottom {
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+.rr-arr-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.6rem;
+    padding-bottom: 0.5rem;
+}
+.rr-arr-player-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.rr-arr-player-link .user-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.2rem;
+}
+.rr-arr-color-icon {
+    margin-left: auto;
+}
+.rr-arr-color-icon.white::before,
+.rr-arr-color-icon.black::before {
+    content: '';
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--font-color);
+}
+.rr-arr-color-icon.white::before {
+    background: #fff;
+}
+.rr-arr-color-icon.black::before {
+    background: #111;
+}
+.suggested-time-wrap {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    position: relative;
+}
+.suggested-time-wrap input {
+    width: 100%;
+    color: var(--font-color);
+    opacity: 1;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-color1);
+    padding: 0.7rem 0.85rem;
+}
+.suggested-time-wrap input.disabled {
+    cursor: not-allowed;
+}
+.suggested-time-wrap .fbt {
+    border: 1px solid var(--green-switch);
+    background: var(--green-switch);
+    color: #fff;
+    padding: 0 1rem;
+    height: 100%;
+    position: absolute;
+    right: 0;
+    top: 0;
+    border-radius: 0 8px 8px 0;
+}
+.suggested-time-wrap .fbt:hover:not([disabled]) {
+    background: var(--green-hover);
+    border-color: var(--green-hover);
+}
+.suggested-time-wrap .fbt[disabled] {
+    border-color: var(--border-color);
+    background: var(--bg-color2);
+    color: var(--flatpickr-text-muted);
+}
+.suggested-time-wrap .flatpickr-input-wrap {
+    width: 100%;
+}
+.suggested-time-wrap .flatpickr-input[readonly] {
+    cursor: pointer;
+}
+.suggested-time-wrap .flatpickr-calendar {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 0.5rem;
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-color1);
+}
+.suggested-time-wrap .calendar-button-wrap {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.suggested-time-wrap .calendar-button-wrap button {
+    flex: 1;
+}
+.suggested-time-wrap.hide-calendar .flatpickr-calendar,
+.suggested-time-wrap.hide-calendar .calendar-button-wrap {
+    display: none;
+}
+.rr-total-section {
+    display: flex;
+    flex-direction: column;
+}
+.rr-total-section .values {
+    padding: 0.5rem 1rem;
+    text-align: left;
+    margin: 0.5rem 0;
+}
+.rr-total-section .fbt {
+    width: 100%;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.5rem;
+    background-color: var(--bg-color2);
+    font-size: 1.05rem;
+    color: var(--font-color);
+}
+.rr-total-section .fbt.go-to-game {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+.rr-total-section .arr-start-wrap {
+    padding-bottom: 1rem;
+}
+.rr-total-section .arr-start-wrap .fbt.ready {
+    background: var(--green-switch);
+    color: #fff;
+}
+.rr-total-section .arr-start-wrap .fbt.ready:hover:not([disabled]) {
+    background: var(--green-hover);
+}
+.rr-total-section .arr-start-wrap .help {
+    display: block;
+    padding: 0 1rem;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+.title-value-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.title-value-wrap .title {
+    font-weight: bold;
+    color: var(--font-color);
+    opacity: 0.7;
+}
+#players tr.withdrawn td {
+    opacity: 0.7;
+}
+.rr-player-state {
+    opacity: 0.55;
+}
+#action.pending-note {
+    padding: 0.5rem 0;
+    font-weight: 600;
+}
+table.pairings tr {
+    cursor: pointer;
+}
+table.pairings th {
+    padding: 0.3em;
+    border: 0;
+    border-left: 3px solid var(--bg-color0);
+}
+#games td.icon-col {
+    width: 2rem;
+    text-align: center;
+    opacity: 0.8;
+}
+#games td.matchup {
+    font-weight: 600;
+}
+#rr-challenges table {
+    width: 100%;
+    border-collapse: collapse;
+}
+#rr-challenges thead th {
+    padding: 0.75rem 0.85rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-color1);
+}
+#rr-challenges tbody td {
+    padding: 0.85rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+#rr-challenges tbody tr.incoming {
+    background: color-mix(in srgb, var(--green) 8%, transparent);
+}
+#rr-challenges tbody tr:hover {
+    background: var(--game-hover);
+}
+#rr-challenges td:last-child {
+    text-align: right;
+}
+#games td.status-col {
+    white-space: nowrap;
+}
+#games td.time-col {
+    white-space: nowrap;
+    text-align: right;
+    opacity: 0.8;
+}
+table.stats td {
+    padding: 0;
+    padding-left: 10px;
+    text-align: right;
+}
+div#player {
+    position: relative;
+    width: 100%;
+}
+div#stats {
+    display: flex;
+    flex-flow: column;
+}
+#player .close {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    opacity: 0.6;
+    transition: all 150ms;
+    color: var(--bad);
+    background: none;
+    border-radius: 0;
+}
+#player .close:hover,
+#player .close:focus-visible {
+    cursor: pointer;
+    opacity: 0.9;
+    color: var(--bad);
+    background: none;
+}
+#stats table {
+    margin: 1em auto;
+}
+#stats h2 {
+    background: linear-gradient(to bottom, var(--bg-meta) 0%, var(--bg-color2) 100%);
+    font-size: 1.4em;
+    font-family: var(--font-sans);
+    padding: 0.6rem 1rem;
+    margin: 0;
+    border-bottom: 1px solid var(--border-color);
+}
+#stats tr {
+    vertical-align: middle;
+}
+td i-side {
+    opacity: 0.6;
+}
+td.result {
+    font-weight: bold;
+}
+.point {
+    flex: 0 0 2em;
+}
+.lose {
+    color: var(--bad);
+}
+.win {
+    color: var(--good);
+}
+
+.shy {
+    font-size: 0.9em;
+    font-weight: bold;
+    opacity: 0.6;
+    text-align: right;
+}
+#clockdiv {
+    display: flex;
+    flex-flow: column;
+}
+#clock {
+    font-family: var(--font-sans);
+    color: var(--font-color);
+    display: inline-block;
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.5em;
+}
+rank {
+    font-weight: bold;
+    padding-right: 1ch;
+}
+div.player {
+    display: flex;
+    flex-flow: row;
+    justify-content: space-between;
+}
+.podium {
+    padding-bottom: 20px;
+}
+.podium > div {
+    display: inline-block;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: bold;
+}
+.podium .second {
+    font-size: 1.3em;
+    width: 29%;
+}
+.podium .first {
+    width: 44%;
+    font-size: 1.6em;
+}
+.podium .third {
+    font-size: 1.2em;
+    width: 27%;
+}
+.podium .trophy {
+    margin: 0 auto 0.5em auto;
+    background: center / contain no-repeat;
+}
+.podium .second .trophy {
+    height: 9em;
+    width: 7em;
+    background-image: url("images/trophy/silver.svg");
+}
+.podium .first .trophy {
+    height: 9em;
+    width: 9em;
+    background-image: url("images/trophy/gold.svg");
+}
+.podium .third .trophy {
+    height: 7em;
+    width: 7em;
+    background-image: url("images/trophy/bronze.svg");
+}
+.podium .stats {
+    margin: 0.5em auto 0 auto;
+    font-size: 0.7em;
+}
+.podium .stats th {
+    font-weight: normal;
+    letter-spacing: -1px;
+    text-align: left;
+}
+.podium .stats td {
+    font-weight: bold;
+    padding-left: 5px;
+    text-align: right;
+}
+
+.tour-table table {
+    margin: auto;
+}
+#summary.box  {
+    padding: 1.7em 0;
+    width:100%;
+}
+#summary h2 {
+    font-size: 1.5em;
+    margin-bottom: 1em;
+    text-align: center;
+}
+#summary table tr {
+    line-height: 2em;
+}
+#summary table td {
+    font-weight: bold;
+    padding: 0 0 0 1em;
+    text-align: right;
+}
+.tour-stats-links {
+    margin: 2em auto 0 auto;
+}
+.tour-stats-links a {
+    display: block;
+    margin: 0.5em 0;
+    color: var(--link-color-blue);
+}
+[class*=" icon-"]:before {
+    margin: 0 0.3em;
+}
+td.bye {
+    text-align: center;
+}
+.shield-trophy {
+    display: block;
+    width: 67px;
+    height: 80px;
+    background: url(images/trophy/shield-gold.png) no-repeat;
+    background-size: contain;
+    font-family: 'pychess';
+    font-size: 40px;
+    line-height: 70px;
+    text-align: center;
+    color: #333 !important;
+    text-shadow: 0 0 6px #fff;
+}
+#top-game div.cg-wrap.mini {
+    width: auto!important;
+}
+#top-game .with-pockets div.cg-wrap.mini {
+    position: relative;
+    top: calc(var(--cg-height) / var(--ranks));
+}
+#top-game {
+    display: flex;
+    align-self: center;
+    flex-flow: column;
+    width: calc(min(100%, 100% * (var(--files) / (var(--ranks) + var(--pocketLength) / var(--files)))));
+}
+#mainboard.with-pockets {
+    padding-bottom: calc(var(--cg-height) / var(--ranks) * 2);
+}
+/* The top game's board is a link to the game; as an <a> it must stay a block. */
+#top-game a#mainboard {
+    display: block;
+}
+/* A row's keyboard control in the standings and the player's games; looks as the cell did. */
+button.row-action {
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.duels {
+    margin: var(--block-gap) 0 0 0;
+}
+.duels a {
+    display: flex;
+    flex-flow: column;
+    color: var(--font-color);
+    padding: .5em .7em;
+    white-space: nowrap;
+    line-height: 1.9em;
+    border-top: 1px solid var(--chat-entry-border-top);
+    transition: all 150ms;
+}
+.duels a:hover {
+    background-color: var(--game-hover);
+}
+line {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+line.a .rank {
+  margin-left: .3em;
+  padding: .1em .5em;
+  background: var(--bg-color2);
+}
+line.b .rank {
+  margin-right: .3em;
+  padding: .1em .5em;
+  background: var(--bg-color2);
+}
+.duels h2 {
+  font-size: 1.5em;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+div.tour-faq {
+  padding: 4em;
+}
+.tour-faq h2 {
+  margin: 1.5em 0 .5em 0;
+  font-size: 30px;
+  padding-left: 0;
+}
+.tour-faq p {
+  padding: 0;
+}
+
+/* Fixed-round desktop/mobile parity: keep round sheets on one line and scroll the
+ * standings as a unit instead of wrapping one player's rounds into tall rows. */
+.tournament-standing-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+table#players.fixed-rounds {
+    min-width: max-content;
+}
+table#players.fixed-rounds td.player {
+    min-width: 9rem;
+    max-width: 12rem;
+    white-space: nowrap;
+}
+table#players.fixed-rounds td.player span.name {
+    display: inline-block;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+td.sheet.fixed-rounds {
+    width: auto;
+}
+td.sheet.fixed-rounds div {
+    flex-flow: row nowrap;
+}
+td.sheet.fixed-rounds > div > * {
+    flex: 0 0 1.3em;
+}
+
+/* The RR matrix follows lishogi's split-table layout: names and totals stay
+ * visible while only the O(n²) arrangement grid scrolls horizontally. */
+.r-table-wrap {
+    max-width: 100%;
+    min-width: 0;
+}
+.r-table-wrap-players,
+.r-table-wrap-scores {
+    flex: 0 0 auto;
+}
+.r-table-wrap-arrs {
+    min-width: 0;
+    flex: 1 1 auto;
+    scrollbar-width: thin;
+}
+#rr-crosstable .r-table-wrap-players th:nth-child(2) {
+    max-width: 10rem;
+}
+#rr-crosstable .r-table-wrap-players th:nth-child(2) .user-link {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* RR list views are the compact fallback below the matrix. Keep their overflow
+ * local to the panel so narrow screens never acquire page-level horizontal scroll. */
+#rr-body [id^='rr-panel-'] {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+#rr-body #games {
+    min-width: 28rem;
+}
+#rr-challenges table {
+    min-width: 40rem;
+}
+#rr-management td.manage-actions {
+    flex-wrap: wrap;
+}
+
+/* Long localized metadata and Team/variant names should wrap inside the sidebar. */
+.tour .game-info .tc,
+.tour .tournament-team,
+.tour .tournament-team a {
+    overflow-wrap: anywhere;
+}
+div.tour-header h1 {
+    overflow-wrap: anywhere;
+}
+#rr-info-meta {
+    flex-wrap: wrap;
+}
+
+/* Appointment details can exceed a phone's height once the inline calendar is
+ * open. Scroll the modal body rather than letting actions fall below the viewport. */
+.rr-modal-content.rr-arr-modal {
+    max-height: calc(100vh - 2rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+.rr-arr-header h3 {
+    padding-right: 2rem;
+    overflow-wrap: anywhere;
+}
+.rr-arr-name,
+.rr-arr-player-link,
+.rr-arr-player-link .user-link {
+    min-width: 0;
+}
+.rr-arr-player-link {
+    flex: 1 1 auto;
+}
+.rr-arr-player-link .user-link {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.title-value-wrap {
+    flex-wrap: wrap;
+}
+.title-value-wrap .value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 799px) {
+    div.tour-header {
+        padding: 0 1rem;
+    }
+    div.tour-header h1 {
+        font-size: 1.6rem;
+    }
+    #startsAt {
+        white-space: normal;
+    }
+    .r-table-wrap {
+        --rr-cell-size: 3.5rem;
+    }
+    #rr-crosstable .r-table-wrap-players th:nth-child(2) {
+        min-width: 8.5rem;
+        max-width: 8.5rem;
+        padding: 0 0.55rem;
+    }
+    #rr-management .rr-section-header,
+    #rr-management .rr-kick-controls,
+    #rr-selection .rr-detail-actions {
+        flex-wrap: wrap;
+    }
+    #rr-management .rr-section-header > *,
+    #rr-management .rr-kick-controls > * {
+        min-width: 0;
+    }
+    #rr-management .rr-kick-controls input {
+        flex: 1 1 12rem;
+    }
+}
+
+@media (max-width: 480px) {
+    table#players.fixed-rounds td.player {
+        min-width: 8rem;
+        max-width: 9rem;
+    }
+    table#players.fixed-rounds td.player span.name {
+        max-width: 6.5rem;
+    }
+    .rr-arr-user {
+        padding: 0.85rem;
+    }
+    .rr-arr-name {
+        font-size: 1.35rem;
+    }
+}

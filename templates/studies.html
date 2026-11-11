@@ -1,0 +1,276 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap" class="study-index-wrap">
+    <main class="study-index-page{% if study_list_navigation %} page-menu{% endif %}">
+        {% if study_list_navigation %}
+        <nav class="page-menu__menu study-index__menu" aria-label="{% trans %}Studies{% endtrans %}">
+            <a class="{% if study_list_active == 'all' %}active{% endif %}" href="{{ home }}/study/all">{% trans %}All studies{% endtrans %}</a>
+            {% if not anon %}
+            <a class="{% if study_list_active == 'mine' %}active{% endif %}" href="{{ home }}/study">{% trans %}My studies{% endtrans %}</a>
+            <a class="{% if study_list_active == 'member' %}active{% endif %}" href="{{ home }}/study/member">{% trans %}Studies I contribute to{% endtrans %}</a>
+            <a class="{% if study_list_active == 'mine-public' %}active{% endif %}" href="{{ home }}/study/public">{% trans %}My public studies{% endtrans %}</a>
+            <a class="{% if study_list_active == 'mine-private' %}active{% endif %}" href="{{ home }}/study/private">{% trans %}My private studies{% endtrans %}</a>
+            <a class="{% if study_list_active == 'likes' %}active{% endif %}" href="{{ home }}/study/likes">{% trans %}My favorite studies{% endtrans %}</a>
+            {% endif %}
+            <a class="{% if study_list_active in ('topics', 'topic') %}active{% endif %}" href="{{ home }}/study/topic">{% trans %}Topics{% endtrans %}</a>
+            {% for topic in study_nav_topics|default([]) %}
+            <a class="study-index__topic-link{% if study_list_active == 'topic' and study_topic == topic %} active{% endif %}" href="{{ home }}/study/topic/{{ topic | urlencode }}">{{ topic }}</a>
+            {% endfor %}
+        </nav>
+        {% endif %}
+        <section class="study-index{% if study_list_navigation %} page-menu__content{% endif %} box" data-infinite-scroll="studies">
+            {% if study_topics_index %}
+            <div class="study-topics-index">
+                <h1>{% trans %}Topics{% endtrans %}</h1>
+                {% if study_nav_topics %}
+                <h2>{% trans %}Your topics{% endtrans %}</h2>
+                <div class="study-topic-list">
+                    {% for topic in study_nav_topics %}
+                    <a href="{{ home }}/study/topic/{{ topic | urlencode }}">{{ topic }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <h2>{% trans %}Popular topics{% endtrans %}</h2>
+                {% if study_popular_topics %}
+                <div class="study-topic-list study-topic-list--popular">
+                    {% for topic in study_popular_topics %}
+                    <a href="{{ home }}/study/topic/{{ topic | urlencode }}">{{ topic }}</a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="study-topics-index__empty">{% trans %}No public Study topics yet.{% endtrans %}</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="study-index__top">
+                <h1 class="study-index__title{% if study_list_active == 'topic' %} study-index__title--topic{% endif %}">
+                    {% if study_list_active == 'search' %}
+                    {% trans %}Search studies{% endtrans %}
+                    {% elif study_list_active == 'all' %}
+                    {% trans %}All studies{% endtrans %}
+                    {% elif study_list_active == 'member' %}
+                    {% trans %}Studies I contribute to{% endtrans %}
+                    {% elif study_list_active == 'mine-public' %}
+                    {% trans %}My public studies{% endtrans %}
+                    {% elif study_list_active == 'mine-private' %}
+                    {% trans %}My private studies{% endtrans %}
+                    {% elif study_list_active == 'likes' %}
+                    {% trans %}My favorite studies{% endtrans %}
+                    {% elif study_list_active == 'topic' %}
+                    {{ study_topic }}
+                    {% elif study_list_is_self %}
+                    {% trans %}My studies{% endtrans %}
+                    {% else %}
+                    {% trans %}Studies by{% endtrans %} <a href="{{ home }}/@/{{ study_list_owner | urlencode }}">{{ study_list_owner }}</a>
+                    {% endif %}
+                </h1>
+                {% if study_search_value is defined %}
+                <form class="study-search" method="get" action="{{ home }}/study/search">
+                    {% if study_page is defined %}<input type="hidden" name="order" value="{{ study_list_order }}">{% endif %}
+                    <label class="study-search__query">
+                        <input type="search" name="q" value="{{ study_search_value }}" minlength="3" maxlength="100" placeholder="{% trans %}Search studies{% endtrans %}" aria-label="{% trans %}Search studies{% endtrans %}" enterkeyhint="search">
+                    </label>
+                    <button class="button study-search__submit" type="submit" title="{% trans %}Search{% endtrans %}" aria-label="{% trans %}Search{% endtrans %}">
+                        <span class="icon icon-search" aria-hidden="true"></span>
+                    </button>
+                    {% if study_search_clear_href and study_search_value %}
+                    <a class="button button-empty study-search__clear" href="{{ study_search_clear_href }}">{% trans %}Clear{% endtrans %}</a>
+                    {% endif %}
+                </form>
+                {% endif %}
+                {% if study_page is defined %}
+                <details class="study-list-order">
+                    <summary class="button button-empty">
+                        {{ study_list_order_label }}
+                    </summary>
+                    <div class="study-list-order__menu">
+                        <a{% if study_list_order == 'updated' %} class="current"{% endif %} href="{{ study_order_hrefs['updated'] }}">{% trans %}Recently updated{% endtrans %}</a>
+                        <a{% if study_list_order == 'newest' %} class="current"{% endif %} href="{{ study_order_hrefs['newest'] }}">{% trans %}Date added (newest){% endtrans %}</a>
+                        <a{% if study_list_order == 'oldest' %} class="current"{% endif %} href="{{ study_order_hrefs['oldest'] }}">{% trans %}Date added (oldest){% endtrans %}</a>
+                        <a{% if study_list_order == 'alphabetical' %} class="current"{% endif %} href="{{ study_order_hrefs['alphabetical'] }}">{% trans %}Alphabetical{% endtrans %}</a>
+                    </div>
+                </details>
+                {% endif %}
+                <a class="study-index__topics" href="{{ home }}/study/topic" title="{% trans %}Topics{% endtrans %}" aria-label="{% trans %}Topics{% endtrans %}">
+                    <span class="icon icon-list" aria-hidden="true"></span>
+                </a>
+                {% if study_list_can_create %}
+                <button class="study-new__toggle" type="button" data-study-new-open title="{% trans %}Create study{% endtrans %}" aria-label="{% trans %}Create study{% endtrans %}" aria-haspopup="dialog" aria-controls="study-new-dialog">
+                    <span class="icon icon-plus-square" aria-hidden="true"></span>
+                </button>
+                {% endif %}
+            </div>
+            {% if study_search is defined and study_search.query_too_short %}
+            <p class="study-search__hint">{% trans %}Enter at least 3 characters to search studies.{% endtrans %}</p>
+            {% elif study_public is defined and study_public.query_too_short %}
+            <p class="study-search__hint">{% trans %}Enter at least 3 characters to search studies.{% endtrans %}</p>
+            {% endif %}
+            {% if studies %}
+            <div class="studies study-list" data-infinite-scroll-content>
+                {% for study in studies %}
+                <article class="study-card" data-infinite-scroll-key="{{ study.id }}">
+                    <a class="study-card__overlay" href="/study/{{ study.id }}" title="{{ study.name }}" aria-label="{{ study.name }}"></a>
+                    <div class="study-card__top">
+                        <span class="study-card__icon" aria-hidden="true"></span>
+                        <div class="study-card__summary">
+                            <strong class="study-card__name">{{ study.name }}</strong>
+                            <div class="study-card__meta">
+                                {% if study.visibility != 'public' %}
+                                <span class="study-card__visibility study-card__visibility--{{ study.visibility }}" title="{{ study.visibility }}" aria-label="{{ study.visibility }}"></span>
+                                {% endif %}
+                                <span class="study-card__likes{% if not anon and study.is_liked_by(username) %} liked{% endif %}" title="{% trans count=study.likes %}{{ count }} like{% pluralize %}{{ count }} likes{% endtrans %}">
+                                    <span class="icon icon-heart" aria-hidden="true"></span>
+                                    <span>{{ study.likes }}</span>
+                                </span>
+                                <span aria-hidden="true">•</span>
+                                <span class="study-card__owner">{{ study.owner }}</span>
+                                <span aria-hidden="true">•</span>
+                                <info-date timestamp="{{ study.updated_at.isoformat() }}"></info-date>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="study-card__body">
+                        <ol class="study-card__chapters">
+                            {% for chapter_name in study_card_chapters.get(study.id, ()) %}
+                            <li class="study-card__chapter">{{ chapter_name }}</li>
+                            {% endfor %}
+                        </ol>
+                        <ol class="study-card__members">
+                            {% for member, role in study.members.items() %}
+                            {% if loop.index0 < study_preview_nb_members %}
+                            <li class="study-card__member study-card__member--{{ role }}">{{ member }}</li>
+                            {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% elif study_search is defined %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-book" aria-hidden="true"></span>
+                <p>{% trans %}No studies match this search.{% endtrans %}</p>
+            </div>
+            {% elif study_public is defined %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-book" aria-hidden="true"></span>
+                {% if study_public.q %}
+                <p>{% trans %}No public studies match this search.{% endtrans %}</p>
+                {% else %}
+                <p>{% trans %}No public studies yet.{% endtrans %}</p>
+                {% endif %}
+            </div>
+            {% elif study_list_active == 'member' %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-book" aria-hidden="true"></span>
+                <p>{% trans %}You do not contribute to any studies yet.{% endtrans %}</p>
+            </div>
+            {% elif study_list_active == 'mine-public' %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-book" aria-hidden="true"></span>
+                <p>{% trans %}You do not have any public studies yet.{% endtrans %}</p>
+            </div>
+            {% elif study_list_active == 'mine-private' %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-book" aria-hidden="true"></span>
+                <p>{% trans %}You do not have any private studies yet.{% endtrans %}</p>
+            </div>
+            {% elif study_list_active == 'likes' %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-heart" aria-hidden="true"></span>
+                <p>{% trans %}You do not have any favorite studies yet.{% endtrans %}</p>
+            </div>
+            {% elif study_list_is_self %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-book" aria-hidden="true"></span>
+                <p>{% trans %}You do not have any studies yet.{% endtrans %}</p>
+            </div>
+            {% else %}
+            <div class="study-empty">
+                <span class="study-empty__icon icon icon-book" aria-hidden="true"></span>
+                <p>{{ study_list_owner }} {% trans %}has no public studies yet.{% endtrans %}</p>
+            </div>
+            {% endif %}
+            {% if study_page is defined and study_page.pages > 1 %}
+            <nav class="study-public-pages" aria-label="{% trans %}Pagination{% endtrans %}" data-infinite-scroll-pager>
+                {% if study_prev_href %}<a class="button" href="{{ study_prev_href }}">{% trans %}Previous{% endtrans %}</a>{% endif %}
+                <span>{% trans page=study_page.page, pages=study_page.pages %}Page {{ page }} / {{ pages }}{% endtrans %}</span>
+                {% if study_next_href %}<a class="button" rel="next" href="{{ study_next_href }}">{% trans %}Next{% endtrans %}</a>{% endif %}
+            </nav>
+            {% endif %}
+            {% endif %}
+        </section>
+    </main>
+</div>
+{% if study_list_can_create %}
+<dialog id="study-new-dialog" class="study-dialog study-new-dialog" aria-labelledby="study-new-dialog-title">
+    <div class="study-dialog__header">
+        <h2 id="study-new-dialog-title">{% trans %}Create study{% endtrans %}</h2>
+        <button class="study-icon-button study-dialog__close" type="button" data-study-new-close aria-label="{% trans %}Close{% endtrans %}">×</button>
+    </div>
+    <form id="study-create-form" class="study-dialog__form study-create-form">
+        <label class="study-dialog__field">
+            <span>{% trans %}Name{% endtrans %}</span>
+            <input type="text" name="name" value="{{ username }}'s Study" maxlength="100" autocomplete="off">
+        </label>
+        <div class="study-dialog__split">
+            <label class="study-dialog__field">
+                <span>{% trans %}Visibility{% endtrans %}</span>
+                <select name="visibility">
+                    <option value="private" selected>{% trans %}Private{% endtrans %}</option>
+                    <option value="unlisted">{% trans %}Unlisted{% endtrans %}</option>
+                    <option value="public">{% trans %}Public{% endtrans %}</option>
+                </select>
+            </label>
+            <label class="study-dialog__field">
+                <span>{% trans %}Computer analysis{% endtrans %}</span>
+                <select name="computer">
+                    <option value="nobody">{% trans %}Nobody{% endtrans %}</option>
+                    <option value="owner">{% trans %}Only me{% endtrans %}</option>
+                    <option value="contributor">{% trans %}Contributors{% endtrans %}</option>
+                    <option value="member">{% trans %}Members{% endtrans %}</option>
+                    <option value="everyone" selected>{% trans %}Everyone{% endtrans %}</option>
+                </select>
+            </label>
+        </div>
+        <div class="study-dialog__split">
+            <label class="study-dialog__field">
+                <span>{% trans %}Allow cloning{% endtrans %}</span>
+                <select name="cloneable">
+                    <option value="nobody">{% trans %}Nobody{% endtrans %}</option>
+                    <option value="owner">{% trans %}Only me{% endtrans %}</option>
+                    <option value="contributor">{% trans %}Contributors{% endtrans %}</option>
+                    <option value="member">{% trans %}Members{% endtrans %}</option>
+                    <option value="everyone" selected>{% trans %}Everyone{% endtrans %}</option>
+                </select>
+            </label>
+            <label class="study-dialog__field">
+                <span>{% trans %}Share & export{% endtrans %}</span>
+                <select name="shareable">
+                    <option value="nobody">{% trans %}Nobody{% endtrans %}</option>
+                    <option value="owner">{% trans %}Only me{% endtrans %}</option>
+                    <option value="contributor">{% trans %}Contributors{% endtrans %}</option>
+                    <option value="member">{% trans %}Members{% endtrans %}</option>
+                    <option value="everyone" selected>{% trans %}Everyone{% endtrans %}</option>
+                </select>
+            </label>
+        </div>
+        <input type="hidden" name="explorer" value="everyone">
+    </form>
+    <div class="study-dialog__actions">
+        <button class="button button-empty study-new-dialog__cancel" type="button" data-study-new-close>{% trans %}Cancel{% endtrans %}</button>
+        <button class="button" type="submit" form="study-create-form">{% trans %}Start{% endtrans %}</button>
+    </div>
+</dialog>
+<dialog id="study-first-chapter-dialog" class="study-dialog" aria-labelledby="study-first-chapter-dialog-title">
+    <div class="study-dialog__header">
+        <h2 id="study-first-chapter-dialog-title">{% trans %}New chapter{% endtrans %}</h2>
+        <button class="study-icon-button study-dialog__close" type="button" data-study-first-chapter-close aria-label="{% trans %}Close{% endtrans %}">×</button>
+    </div>
+    <div id="study-first-chapter-form-mount"></div>
+</dialog>
+{% endif %}
+{% endblock %}
+{% block js %}
+    <script src="{{ js }}"></script>
+{% endblock %}

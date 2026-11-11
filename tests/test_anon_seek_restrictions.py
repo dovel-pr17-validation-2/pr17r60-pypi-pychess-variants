@@ -1,0 +1,328 @@
+import unittest
+from datetime import UTC, datetime, timedelta
+from typing import cast
+
+from mongomock_motor import AsyncMongoMockClient
+from pychess_global_app_state_utils import get_app_state
+from pymongo.asynchronous.mongo_client import AsyncMongoClient
+from seek import (
+    ANON_RESTRICTED_SEEK_MESSAGE,
+    TWO_BOARD_TARGETED_SEEK_MESSAGE,
+    Seek,
+    create_seek,
+)
+from user import User
+from utils import NO_LEGAL_MOVES_START_FEN_MESSAGE, join_seek
+
+from server import init_state, make_app
+
+
+class AnonSeekRestrictionsTestCase(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        db_client = cast(AsyncMongoClient, AsyncMongoMockClient(tz_aware=True))
+        self.app = make_app(db_client=db_client)
+        await init_state(self.app)
+
+    async def asyncTearDown(self):
+        try:
+            await get_app_state(self.app).server_shutdown()
+        except KeyError:
+            pass
+
+    def add_user(self, username: str, anon: bool = False) -> User:
+        app_state = get_app_state(self.app)
+        user = User(app_state, username=username, anon=anon)
+        app_state.users[username] = user
+        return user
+
+    async def test_create_seek_rejects_anon_corr(self):
+        app_state = get_app_state(self.app)
+        anon = self.add_user("Anon-corr", anon=True)
+
+        seek = await create_seek(
+            app_state.db,
+            app_state.invites,
+            app_state.seeks,
+            anon,
+            {
+                "variant": "chess",
+                "fen": "",
+                "color": "r",
+                "minutes": 3,
+                "increment": 2,
+                "byoyomiPeriod": 0,
+                "day": 1,
+                "rated": False,
+                "chess960": False,
+            },
+        )
+
+        self.assertIsNone(seek)
+        self.assertEqual(0, len(app_state.seeks))
+        self.assertEqual(0, len(app_state.invites))
+
+    async def test_create_seek_rejects_anon_bughouse(self):
+        app_state = get_app_state(self.app)
+        anon = self.add_user("Anon-bug", anon=True)
+
+        seek = await create_seek(
+            app_state.db,
+            app_state.invites,
+            app_state.seeks,
+            anon,
+            {
+                "variant": "bughouse",
+                "fen": "",
+                "color": "r",
+                "minutes": 3,
+                "increment": 2,
+                "byoyomiPeriod": 0,
+                "day": 0,
+                "rated": False,
+                "chess960": False,
+            },
+        )
+
+        self.assertIsNone(seek)
+        self.assertEqual(0, len(app_state.seeks))
+        self.assertEqual(0, len(app_state.invites))
+
+    async def test_create_seek_rejects_bughouse_direct_challenge(self):
+        app_state = get_app_state(self.app)
+        challenger = self.add_user("challenger")
+        target = self.add_user("target")
+
+        seek = await create_seek(
+            app_state.db,
+            app_state.invites,
+            app_state.seeks,
+            challenger,
+            {
+                "variant": "bughouse",
+                "fen": "",
+                "color": "r",
+                "minutes": 3,
+                "increment": 2,
+                "byoyomiPeriod": 0,
+                "day": 0,
+                "rated": False,
+                "chess960": False,
+                "target": target.username,
+            },
+        )
+
+        self.assertIsNone(seek)
+        self.assertEqual(0, len(app_state.seeks))
+        self.assertEqual(0, len(app_state.invites))
+
+    async def test_create_seek_rejects_bughouse_invite(self):
+        app_state = get_app_state(self.app)
+        creator = self.add_user("creator-invite")
+
+        seek = await create_seek(
+            app_state.db,
+            app_state.invites,
+            app_state.seeks,
+            creator,
+            {
+                "variant": "bughouse",
+                "fen": "",
+                "color": "r",
+                "minutes": 3,
+                "increment": 2,
+                "byoyomiPeriod": 0,
+                "day": 0,
+                "rated": False,
+                "chess960": False,
+                "target": "Invite-friend",
+            },
+        )
+
+        self.assertIsNone(seek)
+        self.assertEqual(0, len(app_state.seeks))
+        self.assertEqual(0, len(app_state.invites))
+
+    async def test_join_seek_rejects_anon_corr(self):
+        app_state = get_app_state(self.app)
+        creator = self.add_user("creator")
+        anon = self.add_user("Anon-join-corr", anon=True)
+
+        seek = Seek("seek-corr", creator, "chess", day=2, player1=creator)
+        app_state.seeks[seek.id] = seek
+
+        response = await join_seek(app_state, anon, seek)
+
+        self.assertEqual("error", response["type"])
+        self.assertEqual(ANON_RESTRICTED_SEEK_MESSAGE, response["message"])
+        self.assertIsNone(seek.player2)
+        self.assertEqual(0, len(app_state.games))
+
+    async def test_join_seek_rejects_anon_bughouse(self):
+        app_state = get_app_state(self.app)
+        creator = self.add_user("creator-bug")
+        anon = self.add_user("Anon-join-bug", anon=True)
+
+        seek = Seek("seek-bug", creator, "bughouse", day=0, player1=creator)
+        app_state.seeks[seek.id] = seek
+
+        response = await join_seek(app_state, anon, seek)
+
+        self.assertEqual("error", response["type"])
+        self.assertEqual(ANON_RESTRICTED_SEEK_MESSAGE, response["message"])
+        self.assertIsNone(seek.player2)
+        self.assertEqual(0, len(app_state.games))
+
+    async def test_join_seek_rejects_bughouse_direct_challenge(self):
+        app_state = get_app_state(self.app)
+        creator = self.add_user("creator-dc-bug")
+        joiner = self.add_user("joiner-dc-bug")
+
+        seek = Seek(
+            "seek-dc-bug",
+            creator,
+            "bughouse",
+            day=0,
+            player1=creator,
+            target=joiner.username,
+        )
+        app_state.seeks[seek.id] = seek
+
+        response = await join_seek(app_state, joiner, seek)
+
+        self.assertEqual("error", response["type"])
+        self.assertEqual(TWO_BOARD_TARGETED_SEEK_MESSAGE, response["message"])
+        self.assertIsNone(seek.player2)
+        self.assertEqual(0, len(app_state.games))
+
+    async def test_join_seek_rejects_bughouse_invite(self):
+        app_state = get_app_state(self.app)
+        creator = self.add_user("creator-invite-bug")
+        joiner = self.add_user("joiner-invite-bug")
+
+        seek = Seek(
+            "seek-invite-bug",
+            creator,
+            "bughouse",
+            day=0,
+            player1=creator,
+            target="Invite-friend",
+        )
+        app_state.seeks[seek.id] = seek
+
+        response = await join_seek(app_state, joiner, seek)
+
+        self.assertEqual("error", response["type"])
+        self.assertEqual(TWO_BOARD_TARGETED_SEEK_MESSAGE, response["message"])
+        self.assertIsNone(seek.player2)
+        self.assertEqual(0, len(app_state.games))
+
+    async def test_join_seek_allows_registered_corr(self):
+        app_state = get_app_state(self.app)
+        creator = self.add_user("creator-ok")
+        joiner = self.add_user("joiner-ok")
+
+        seek = Seek("seek-corr-ok", creator, "chess", day=1, player1=creator)
+        app_state.seeks[seek.id] = seek
+
+        response = await join_seek(app_state, joiner, seek)
+
+        self.assertEqual("new_game", response["type"])
+        game = app_state.games[response["gameId"]]
+        self.assertTrue(game.corr)
+
+    async def test_join_seek_rejects_custom_fen_with_no_legal_moves(self):
+        app_state = get_app_state(self.app)
+        creator = self.add_user("creator-terminal")
+        joiner = self.add_user("joiner-terminal")
+
+        seek = Seek(
+            "seek-terminal",
+            creator,
+            "chess",
+            fen="7k/5Q2/7K/8/8/8/8/8 b - - 0 1",
+            player1=creator,
+        )
+        app_state.seeks[seek.id] = seek
+
+        response = await join_seek(app_state, joiner, seek)
+
+        self.assertEqual("error", response["type"])
+        self.assertEqual(NO_LEGAL_MOVES_START_FEN_MESSAGE, response["message"])
+        self.assertEqual(0, len(app_state.games))
+        self.assertNotIn(seek.id, app_state.seeks)
+
+    async def test_seek_expiry_defaults_by_seek_type(self):
+        creator = self.add_user("creator-expiry")
+        now = datetime.now(UTC)
+
+        regular_seek = Seek("seek-regular", creator, "chess", day=0, player1=creator)
+        self.assertIsNone(regular_seek.expire_at)
+
+        invite_seek = Seek(
+            "seek-invite",
+            creator,
+            "chess",
+            day=0,
+            target="Invite-friend",
+            player1=creator,
+        )
+        self.assertIsNotNone(invite_seek.expire_at)
+        self.assertGreater(invite_seek.expire_at, now + timedelta(hours=23))
+        self.assertLess(invite_seek.expire_at, now + timedelta(hours=25))
+
+        corr_seek = Seek("seek-corr-exp", creator, "chess", day=1, player1=creator)
+        self.assertIsNotNone(corr_seek.expire_at)
+        self.assertGreater(corr_seek.expire_at, now + timedelta(days=13))
+        self.assertLess(corr_seek.expire_at, now + timedelta(days=15))
+
+    async def test_seek_json_serializes_expire_at(self):
+        creator = self.add_user("creator-json-expiry")
+        seek = Seek(
+            "seek-invite-json",
+            creator,
+            "chess",
+            day=0,
+            target="Invite-friend",
+            player1=creator,
+        )
+
+        seek_json = seek.seek_json
+        self.assertIn("expireAt", seek_json)
+        self.assertIsInstance(seek_json["expireAt"], str)
+        self.assertEqual(seek_json["expireAt"], seek.expire_at.isoformat())
+
+    async def test_seek_db_json_keeps_datetime_expire_at(self):
+        creator = self.add_user("creator-db-expiry")
+        seek = Seek(
+            "seek-invite-db",
+            creator,
+            "chess",
+            day=0,
+            target="Invite-friend",
+            player1=creator,
+        )
+
+        seek_db_json = seek.seek_db_json
+        self.assertIn("expireAt", seek_db_json)
+        self.assertIsInstance(seek_db_json["expireAt"], datetime)
+        self.assertEqual(seek_db_json["expireAt"], seek.expire_at)
+
+    async def test_seek_accepts_iso_expire_at_string(self):
+        creator = self.add_user("creator-expire-str")
+        seek = Seek(
+            "seek-expire-str",
+            creator,
+            "chess",
+            day=0,
+            target="Invite-friend",
+            player1=creator,
+            expire_at="2099-02-28T22:58:38+00:00",
+        )
+
+        self.assertIsNotNone(seek.expire_at)
+        self.assertIsInstance(seek.expire_at, datetime)
+        self.assertFalse(seek.is_expired())
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

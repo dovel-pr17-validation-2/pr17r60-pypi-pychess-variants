@@ -1,0 +1,30 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="page-menu">
+<aside>
+    <ul class="guide">
+    <li><a href="{{ home }}/blogs"><span>{% trans %}By PyChess{% endtrans %}</span></a></li>
+    <li><a href="{{ home }}/blogs/community"><span>{% trans %}Community{% endtrans %}</span></a></li>
+    {% for topic in site_tags %}
+    <li>
+    <a href="{{ home }}/blogs?tags={{ topic | urlencode }}"><span>#{{ _(topic) }}</span></a>
+    </li>
+    {% endfor %}
+    </ul>
+</aside>
+<div class="blogs" data-infinite-scroll="site-blogs">
+    <div class="box-top"><h1>{% trans %}PyChess Blogs{% endtrans %}</h1></div>
+    <div class="blog" data-infinite-scroll-content>
+    {%- for blog in blogs -%}
+    <a class="card" data-infinite-scroll-key="{{ blog['post_id'] }}" href="{{ blog['url'] if blog['url'] else (home + '/blogs/' + blog['_id']) }}"><span class="card-media"><img class="{% if not blog['image_src'] %}blog-cover-fallback{% endif %}" style="background-image: url('{{ blog['image_src'] or static('images/ublog-default-cover.svg') }}')" alt="{{ blog['imageAlt'] if blog['image_src'] else 'PyChess' }}"><span class="date">{{ blog['date'] }}</span><span class="author"><player-title>{{ blog['author_title'] }} </player-title>{{ blog['author'] }}</span></span><span class="info"><span class="title">{{ blog['title'] }}</span><span class="sub-title">{{ blog['intro'] }}</span></span></a>
+    {%- endfor -%}
+    </div>
+    {% include "infinite-scroll-pager.html" %}
+</div>
+</main>
+</div>
+{% endblock %}
+{% block js %}
+    <script src="{{ js }}"></script>
+{% endblock %}

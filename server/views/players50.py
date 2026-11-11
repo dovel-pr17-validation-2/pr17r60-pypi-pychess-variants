@@ -1,0 +1,32 @@
+import aiohttp_jinja2
+from aiohttp import web
+from pychess_global_app_state_utils import get_app_state
+from typing_defs import ViewContext
+from variants import VARIANTS
+
+from views import get_user_context
+
+
+@aiohttp_jinja2.template("players50.html")
+async def players50(request: web.Request) -> ViewContext:
+    _user, context = await get_user_context(request)
+
+    app_state = get_app_state(request.app)
+    variant = request.match_info.get("variant")
+
+    if variant not in VARIANTS or variant not in app_state.highscore:
+        raise web.HTTPNotFound()
+
+    context["variant"] = variant
+    highscore = app_state.highscore[variant]
+    context["highscore"] = highscore
+    highscore_usernames = {entry.split("|", 1)[0] for entry in highscore}
+    context["highscore_patrons"] = await app_state.public_users.get_patrons(highscore_usernames)
+    context["highscore_online"] = {
+        username
+        for username in highscore_usernames
+        if (live_user := app_state.users.data.get(username)) is not None and live_user.online
+    }
+    context["view"] = "players50"
+
+    return context

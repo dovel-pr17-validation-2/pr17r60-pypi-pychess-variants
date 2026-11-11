@@ -1,0 +1,279 @@
+import asyncio
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
+
+import test_logger
+from aiohttp.test_utils import AioHTTPTestCase
+from aiohttp.web_ws import WebSocketResponse
+from game import Game
+from glicko2.glicko2 import new_default_perf_map
+from mongomock_motor import AsyncMongoMockClient
+from pychess_global_app_state_utils import get_app_state
+from seek import Seek
+from user import User
+from variants import VARIANTS
+from wsl import (
+    BOT_UNSUPPORTED_VARIANT_MESSAGE,
+    CATALOGUED_CASUAL_ONLY_MESSAGE,
+    finally_logic,
+    handle_accept_seek,
+    handle_create_auto_pairing,
+    handle_create_bot_challenge,
+    handle_create_seek,
+)
+
+from server import make_app
+
+test_logger.init_test_logger()
+
+PERFS = new_default_perf_map(VARIANTS)
+
+
+class LobbySocketCleanupTestCase(AioHTTPTestCase):
+    async def startup(self, app):
+        app_state = get_app_state(self.app)
+        self.user = User(app_state, username="aplayer", perfs=PERFS)
+        app_state.users[self.user.username] = self.user
+
+    async def get_application(self):
+        app = make_app(db_client=AsyncMongoMockClient(tz_aware=True))
+        app.on_startup.append(self.startup)
+        return app
+
+    async def tearDownAsync(self):
+        await self.client.close()
+
+    async def test_finally_logic_handles_missing_lobby_socket_key(self):
+        app_state = get_app_state(self.app)
+        ws = WebSocketResponse()
+        self.user.lobby_sockets.add(ws)
+
+        # Simulate out-of-sync cleanup where user socket exists but dict entry is gone.
+        app_state.lobby.lobbysockets.pop(self.user.username, None)
+
+        await finally_logic(app_state, ws, self.user)
+
+        self.assertEqual(len(self.user.lobby_sockets), 0)
+        self.assertNotIn(self.user.username, app_state.lobby.lobbysockets)
+
+    async def test_finally_logic_schedules_abandon_when_round_socket_never_connects(self):
+        app_state = get_app_state(self.app)
+        opp = User(app_state, username="opponent", perfs=PERFS)
+        app_state.users[opp.username] = opp
+
+        game = Game(app_state, "abnd0001", "chess", "", self.user, opp, base=1, inc=0, rated=False)
+        app_state.games[game.id] = game
+        self.assertEqual(self.user.game_in_progress, game.id)
+
+        ws = WebSocketResponse()
+        self.user.lobby_sockets.add(ws)
+        app_state.lobby.lobbysockets[self.user.username] = self.user.lobby_sockets
+
+        await finally_logic(app_state, ws, self.user)
+
+        self.assertIn(game.id, self.user.abandon_game_tasks)
+
+        task = self.user.abandon_game_tasks[game.id]
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        self.assertNotIn(game.id, self.user.abandon_game_tasks)
+
+    async def test_finally_logic_does_not_schedule_abandon_when_other_lobby_socket_remains(self):
+        app_state = get_app_state(self.app)
+        opp = User(app_state, username="opponent2", perfs=PERFS)
+        app_state.users[opp.username] = opp
+
+        game = Game(app_state, "abnd0002", "chess", "", self.user, opp, base=1, inc=0, rated=False)
+        app_state.games[game.id] = game
+        self.assertEqual(self.user.game_in_progress, game.id)
+
+        ws1 = WebSocketResponse()
+        ws2 = WebSocketResponse()
+        self.user.lobby_sockets.add(ws1)
+        self.user.lobby_sockets.add(ws2)
+        app_state.lobby.lobbysockets[self.user.username] = self.user.lobby_sockets
+
+        await finally_logic(app_state, ws1, self.user)
+
+        self.assertNotIn(game.id, self.user.abandon_game_tasks)
+        self.assertIn(ws2, self.user.lobby_sockets)
+
+        # Avoid shutdown-time close() on an unprepared websocket test double.
+        self.user.lobby_sockets.discard(ws2)
+        app_state.lobby.lobbysockets.pop(self.user.username, None)
+
+    async def test_finally_logic_removes_seek_for_deleted_variant(self):
+        app_state = get_app_state(self.app)
+        creator = User(app_state, username="seek-creator", perfs=PERFS)
+        app_state.users[creator.username] = creator
+        seek = Seek("stale001", creator, "chess", day=2)
+        seek.variant = "deleted_catalogued_variant"
+        app_state.seeks[seek.id] = seek
+        creator.seeks[seek.id] = seek
+        await app_state.db.seek.insert_one(seek.seek_db_json)
+
+        ws = WebSocketResponse()
+        self.user.lobby_sockets.add(ws)
+        app_state.lobby.lobbysockets[self.user.username] = self.user.lobby_sockets
+
+        await finally_logic(app_state, ws, self.user)
+
+        self.assertNotIn(seek.id, app_state.seeks)
+        self.assertNotIn(seek.id, creator.seeks)
+        self.assertIsNone(await app_state.db.seek.find_one({"_id": seek.id}))
+
+    async def test_bot_user_cannot_create_or_join_lobby_games(self):
+        app_state = get_app_state(self.app)
+        bot_user = User(app_state, bot=True, username="bot-lobby", perfs=PERFS)
+        app_state.users[bot_user.username] = bot_user
+        opp = User(app_state, username="human-creator", perfs=PERFS)
+        app_state.users[opp.username] = opp
+
+        seek = Seek("seek1234", opp, "chess", rated=True)
+        app_state.seeks[seek.id] = seek
+
+        create_ws = SimpleNamespace(send_str=AsyncMock())
+        await handle_create_seek(
+            app_state,
+            create_ws,
+            bot_user,
+            {
+                "variant": "chess",
+                "fen": "",
+                "color": "r",
+                "minutes": 5,
+                "increment": 3,
+                "byoyomiPeriod": 0,
+                "day": 0,
+                "rated": True,
+                "rrmin": None,
+                "rrmax": None,
+                "chess960": False,
+                "target": "",
+            },
+        )
+        self.assertIn(
+            "BOT accounts cannot create or join lobby games", create_ws.send_str.call_args.args[0]
+        )
+
+        accept_ws = SimpleNamespace(send_str=AsyncMock())
+        await handle_accept_seek(app_state, accept_ws, bot_user, {"seekID": seek.id})
+        self.assertIn(
+            "BOT accounts cannot create or join lobby games", accept_ws.send_str.call_args.args[0]
+        )
+
+    async def test_standard_variant_auto_pairing_uses_variants_list(self):
+        app_state = get_app_state(self.app)
+        ws = SimpleNamespace(send_str=AsyncMock())
+
+        await handle_create_auto_pairing(
+            app_state,
+            ws,
+            self.user,
+            {
+                "type": "create_auto_pairing",
+                "variants": [("chess", False)],
+                "tcs": [(5, 3, 0)],
+                "rrmin": -1000,
+                "rrmax": 1000,
+            },
+        )
+
+        self.assertIn(self.user, app_state.auto_pairing_users)
+        self.user.remove_from_auto_pairings()
+
+    async def test_catalogued_variant_is_rejected_from_auto_pairing_variants_list(self):
+        app_state = get_app_state(self.app)
+        ws = SimpleNamespace(send_str=AsyncMock())
+
+        with patch("wsl.is_catalogued_variant", side_effect=lambda name: name == "custom"):
+            await handle_create_auto_pairing(
+                app_state,
+                ws,
+                self.user,
+                {
+                    "type": "create_auto_pairing",
+                    "variants": [("chess", False), ("custom", False)],
+                    "tcs": [(5, 3, 0)],
+                    "rrmin": -1000,
+                    "rrmax": 1000,
+                },
+            )
+
+        self.assertNotIn(self.user, app_state.auto_pairing_users)
+        self.assertIn(CATALOGUED_CASUAL_ONLY_MESSAGE, ws.send_str.call_args.args[0])
+
+    async def test_bot_challenge_is_forced_casual(self):
+        app_state = get_app_state(self.app)
+        engine = User(app_state, bot=True, username="engine-bot", perfs=PERFS)
+        engine.online = True
+        engine.bot_supported_variants = {"chess"}
+        challenger = User(app_state, username="human", perfs=PERFS)
+        app_state.users[engine.username] = engine
+        app_state.users[challenger.username] = challenger
+
+        ws = SimpleNamespace(send_str=AsyncMock())
+        await handle_create_bot_challenge(
+            app_state,
+            ws,
+            challenger,
+            {
+                "profileid": engine.username,
+                "variant": "chess",
+                "fen": "",
+                "color": "r",
+                "minutes": 5,
+                "increment": 3,
+                "byoyomiPeriod": 0,
+                "rated": True,
+                "chess960": False,
+                "target": "BOT_challenge",
+            },
+        )
+
+        seek = next(iter(app_state.seeks.values()))
+        self.assertFalse(seek.rated)
+        event = await engine.event_queue.get()
+        self.assertIn('"rated":false', event)
+        self.assertIn('"perf":{"name":"chess"}', event)
+
+    async def test_bot_challenge_checks_normal_and_960_capabilities_separately(self):
+        app_state = get_app_state(self.app)
+        engine = User(app_state, bot=True, username="shuffle-bot", perfs=PERFS)
+        engine.online = True
+        engine.bot_supported_variants = {"crazyhouse960"}
+        challenger = User(app_state, username="human-960", perfs=PERFS)
+        app_state.users[engine.username] = engine
+        app_state.users[challenger.username] = challenger
+
+        unsupported_ws = SimpleNamespace(send_str=AsyncMock())
+        challenge_data = {
+            "profileid": engine.username,
+            "variant": "crazyhouse",
+            "fen": "",
+            "color": "r",
+            "minutes": 5,
+            "increment": 3,
+            "byoyomiPeriod": 0,
+            "rated": False,
+            "chess960": False,
+            "target": "BOT_challenge",
+        }
+        await handle_create_bot_challenge(app_state, unsupported_ws, challenger, challenge_data)
+
+        self.assertIn(BOT_UNSUPPORTED_VARIANT_MESSAGE, unsupported_ws.send_str.call_args.args[0])
+        self.assertFalse(app_state.seeks)
+
+        supported_ws = SimpleNamespace(send_str=AsyncMock())
+        await handle_create_bot_challenge(
+            app_state,
+            supported_ws,
+            challenger,
+            challenge_data | {"chess960": True},
+        )
+
+        seek = next(iter(app_state.seeks.values()))
+        self.assertTrue(seek.chess960)

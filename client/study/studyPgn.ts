@@ -1,0 +1,420 @@
+import type { Step } from '../messages';
+import type { StudyChapterMode } from '../types';
+import { GLYPH_GROUPS } from '../analysis/glyphs';
+import { encodePgnUtf8Base64 } from '../pgn';
+import { variantKey } from '../variants';
+import {
+    renderFullTreePgnMoveText,
+    type AnalysisAnnotations,
+    type AnalysisComment,
+    type AnalysisTreeNode,
+} from '../analysis/analysisTree';
+import { analysisTreeFromStudy, type StudyTreeDto } from './studyTree';
+
+export interface StudyPgnChapterData {
+    id: string;
+    name: string;
+    order: number;
+    variant: string;
+    chess960: boolean;
+    initialFen: string;
+    orientation: 'white' | 'black';
+    mode?: StudyChapterMode;
+    concealPly?: number;
+    description: string;
+    tags: Record<string, string>;
+    tree: StudyTreeDto;
+    variantIni?: string;
+    createdAt?: string;
+}
+
+export interface StudyPgnContext {
+    id: string;
+    name: string;
+    owner: string;
+    home: string;
+}
+
+const BRUSH_CODE: Record<string, string> = {
+    green: 'G',
+    red: 'R',
+    blue: 'B',
+    yellow: 'Y',
+};
+
+// Versioned PyChess-only Study extension. Ordinary PGN readers may ignore or
+// discard these tags/comments; base64 keeps lesson text opaque to PGN brace syntax.
+const PYCHESS_STUDY_PGN_VERSION = '1';
+
+function gamebookComment(gamebook: { hint?: string; deviation?: string } | undefined): string | undefined {
+    if (!gamebook?.hint && !gamebook?.deviation) return undefined;
+    const payload = JSON.stringify({
+        ...(gamebook.hint ? { hint: gamebook.hint } : {}),
+        ...(gamebook.deviation ? { deviation: gamebook.deviation } : {}),
+    });
+    return `{[%pygamebook ${encodePgnUtf8Base64(payload)}]}`;
+}
+
+function tagValue(value: string): string {
+    return value
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/[\r\n]+/g, ' ');
+}
+
+function commentValue(value: string): string {
+    // PGN has no standard brace escaping. Backslash escaping is widely tolerated and,
+    // unlike deleting/replacing the brace, preserves enough information for our later
+    // Study importer to recover the original comment text.
+    return value.replace(/\\/g, '\\\\').replace(/}/g, '\\}');
+}
+
+function pgnDate(createdAt?: string): string {
+    const date = createdAt ? new Date(createdAt) : new Date();
+    if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+    return date.toISOString().slice(0, 10).replace(/-/g, '.');
+}
+
+function rootTurnColor(initialFen: string): Step['turnColor'] {
+    const side = initialFen.trim().split(/\s+/)[1]?.toLowerCase();
+    return side === 'b' ? 'black' : 'white';
+}
+
+function variantTag(chapter: StudyPgnChapterData): string {
+    return chapter.variantIni ? chapter.variant : variantKey(chapter.variant, chapter.chess960);
+}
+
+function chapterResult(chapter: StudyPgnChapterData): string {
+    const result = chapter.tags['Result']?.trim();
+    if (result === '½-½') return '1/2-1/2';
+    return result === '1-0' || result === '0-1' || result === '1/2-1/2' || result === '*' ? result : '*';
+}
+
+function pgnClock(milliseconds: number): string {
+    const totalSeconds = Math.max(0, Math.round(milliseconds / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function fullClockComment(clocks: [number, number] | undefined): string | undefined {
+    return clocks ? `{[%pyclocks ${clocks[0]},${clocks[1]}]}` : undefined;
+}
+
+function shapeComment(annotations: AnalysisAnnotations | undefined): string | undefined {
+    if (!annotations?.shapes.length) return undefined;
+    const circles: string[] = [];
+    const arrows: string[] = [];
+    for (const shape of annotations.shapes) {
+        if (!shape.orig) continue;
+        const brush = BRUSH_CODE[shape.brush ?? 'green'] ?? 'G';
+        if (shape.dest) arrows.push(`${brush}${shape.orig}${shape.dest}`);
+        else circles.push(`${brush}${shape.orig}`);
+    }
+    const csl = circles.length ? `[%csl ${circles.join(',')}]` : '';
+    const cal = arrows.length ? `[%cal ${arrows.join(',')}]` : '';
+    return csl || cal ? `${csl}${cal}` : undefined;
+}
+
+function attributionName(value: string): string {
+    return value.replace(/["\]]/g, '').trim();
+}
+
+function attributionId(value: string): string {
+    return value.replace(/[\s\]]/g, '').trim();
+}
+
+function attributionMatchesAnnotator(comment: AnalysisComment, annotator: string): boolean {
+    const normalizedAnnotator = annotator.trim().toLowerCase();
+    const sourceAuthor = comment.sourceAuthor?.trim().toLowerCase();
+    const sourceAuthorId = comment.sourceAuthorId?.trim().toLowerCase();
+    if (sourceAuthor && sourceAuthor === normalizedAnnotator) return true;
+    if (sourceAuthorId) {
+        if (sourceAuthorId === normalizedAnnotator) return true;
+        if (normalizedAnnotator.endsWith(`/@/${sourceAuthorId}`) || normalizedAnnotator.endsWith(`/${sourceAuthorId}`))
+            return true;
+    }
+    return false;
+}
+
+function authoredComment(comment: AnalysisComment, annotator: string): string {
+    const sourceAuthor = comment.sourceAuthor && attributionName(comment.sourceAuthor);
+    if (!sourceAuthor || attributionMatchesAnnotator(comment, annotator)) return `{${commentValue(comment.text)}}`;
+    const sourceAuthorId = comment.sourceAuthorId && attributionId(comment.sourceAuthorId);
+    const anno = sourceAuthorId ? `[%anno "${sourceAuthor}", ${sourceAuthorId}]` : `[%anno "${sourceAuthor}"]`;
+    return `{${anno} ${commentValue(comment.text)}}`;
+}
+
+function annotationComments(
+    annotations: AnalysisAnnotations | undefined,
+    root = false,
+    annotator = '',
+): string[] {
+    if (!annotations) return [];
+    const result = annotations.comments.map(comment => authoredComment(comment, annotator));
+    const shapes = shapeComment(annotations);
+    if (shapes) result.push(`{${shapes}}`);
+    // NAGs have a standard location only after a move. Preserve root NAGs in an
+    // opaque PGN comment extension so ordinary PGN readers can safely ignore it.
+    if (root && annotations.nags.length) result.push(`{[%pynag ${annotations.nags.join(',')}]}`);
+    return result;
+}
+
+function nodeSan(node: AnalysisTreeNode): string {
+    const san = node.step.sanSAN ?? node.step.san ?? node.step.move ?? '';
+    // The six punctuation annotations attach to SAN; all other NAGs are tokens.
+    const suffix = (node.annotations?.nags ?? [])
+        .filter(nag => nag >= 1 && nag <= 6)
+        .map(nag => GLYPH_GROUPS.move.find(glyph => glyph.id === nag)!.symbol)
+        .join('');
+    return san + suffix;
+}
+
+function evalComment(node: AnalysisTreeNode): string | undefined {
+    const score = node.eval?.s;
+    if (!score) return undefined;
+    const whitePov = node.step.turnColor === 'black' ? -1 : 1;
+    if (Number.isInteger(score.mate)) return `{[%eval #${whitePov * score.mate!}]}`;
+    if (Number.isInteger(score.cp)) return `{[%eval ${((whitePov * score.cp!) / 100).toFixed(2)}]}`;
+    return undefined;
+}
+
+function clockComments(node: AnalysisTreeNode): string[] {
+    const clocks = node.step.clocks;
+    if (!clocks) return [];
+    const mover = node.step.turnColor === 'black' ? 0 : 1;
+    return [`{[%clk ${pgnClock(clocks[mover])}]}`, fullClockComment(clocks)!];
+}
+
+function nodeSuffix(node: AnalysisTreeNode, annotator: string, forceVariation: boolean): string {
+    const annotations = node.annotations;
+    return [
+        ...(annotations?.nags.filter(nag => nag > 6).map(nag => `$${nag}`) ?? []),
+        evalComment(node),
+        ...annotationComments(annotations, false, annotator),
+        gamebookComment(node.gamebook),
+        forceVariation ? '{[%pyforcevariation]}' : undefined,
+        ...clockComments(node),
+    ]
+        .filter((value): value is string => Boolean(value))
+        .join(' ');
+}
+
+function chapterTags(study: StudyPgnContext, chapter: StudyPgnChapterData): Array<[string, string]> {
+    const tags = new Map<string, string>(Object.entries(chapter.tags));
+    const chapterUrl = `${study.home}/study/${study.id}/${chapter.id}`;
+
+    if (!tags.has('Event')) tags.set('Event', `${study.name}: ${chapter.name}`);
+    if (!tags.has('Site')) tags.set('Site', chapterUrl);
+    if (!tags.has('Date')) tags.set('Date', pgnDate(chapter.createdAt));
+    if (!tags.has('White')) tags.set('White', '?');
+    if (!tags.has('Black')) tags.set('Black', '?');
+
+    // Structural tags are authoritative and may not be overridden by free-form tags.
+    tags.set('Result', chapterResult(chapter));
+    tags.set('Variant', variantTag(chapter));
+    tags.set('FEN', chapter.initialFen);
+    tags.set('SetUp', '1');
+    tags.set('StudyName', study.name);
+    tags.set('ChapterName', chapter.name);
+    tags.set('ChapterURL', chapterUrl);
+    // An imported Annotator is source provenance and also the default author for
+    // imported comments. Match Lichess by keeping it; native chapters fall back
+    // to the current Study owner.
+    if (!tags.has('Annotator')) tags.set('Annotator', `${study.home}/@/${study.owner}`);
+    tags.set('Orientation', chapter.orientation);
+    tags.set('PyChessVariant', chapter.variant);
+    tags.set('PyChessStudyVersion', PYCHESS_STUDY_PGN_VERSION);
+    tags.set('PyChessChapterMode', chapter.mode ?? 'normal');
+    if ((chapter.mode ?? 'normal') === 'conceal') tags.set('PyChessConcealPly', String(chapter.concealPly ?? 0));
+    else tags.delete('PyChessConcealPly');
+    if ((chapter.mode ?? 'normal') === 'gamebook') tags.set('ChapterMode', 'gamebook');
+    else tags.delete('ChapterMode');
+    if (chapter.chess960) tags.set('PyChessChess960', '1');
+    else tags.delete('PyChessChess960');
+
+    if (chapter.variantIni) {
+        tags.set('PyChessVariantIniEncoding', 'base64');
+        tags.set('PyChessVariantIni', encodePgnUtf8Base64(chapter.variantIni));
+    } else {
+        tags.delete('PyChessVariantIniEncoding');
+        tags.delete('PyChessVariantIni');
+    }
+
+    if (chapter.description && chapter.description !== '-') {
+        tags.set('PyChessChapterDescriptionEncoding', 'base64');
+        tags.set('PyChessChapterDescription', encodePgnUtf8Base64(chapter.description));
+    } else {
+        tags.delete('PyChessChapterDescriptionEncoding');
+        tags.delete('PyChessChapterDescription');
+    }
+
+    const preferred = [
+        'Event',
+        'Site',
+        'Date',
+        'White',
+        'Black',
+        'Result',
+        'Variant',
+        'FEN',
+        'SetUp',
+        'StudyName',
+        'ChapterName',
+        'ChapterURL',
+        'Annotator',
+        'Orientation',
+        'PyChessVariant',
+        'PyChessStudyVersion',
+        'PyChessChapterMode',
+        'PyChessConcealPly',
+        'ChapterMode',
+        'PyChessChess960',
+        'PyChessVariantIniEncoding',
+        'PyChessVariantIni',
+        'PyChessChapterDescriptionEncoding',
+        'PyChessChapterDescription',
+    ];
+    const preferredSet = new Set(preferred);
+    const result: Array<[string, string]> = [];
+    for (const name of preferred) {
+        const value = tags.get(name);
+        if (value !== undefined) result.push([name, value]);
+    }
+    for (const [name, value] of [...tags.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+        if (!preferredSet.has(name)) result.push([name, value]);
+    }
+    return result;
+}
+
+export function renderStudyChapterPgn(study: StudyPgnContext, chapter: StudyPgnChapterData): string {
+    const rootStep: Step = {
+        fen: chapter.initialFen,
+        move: undefined,
+        check: false,
+        turnColor: rootTurnColor(chapter.initialFen),
+    };
+    const tree = analysisTreeFromStudy(rootStep, chapter.tree);
+    // Standard PGN has no way to mark a preferred continuation as "variation only".
+    // Rendering the Study forceVariation flag directly would produce a parenthesized
+    // continuation such as `1. e4 (1... e5)`, which ordinary RAV parsers interpret as
+    // a sibling of e4 rather than a continuation after it. Preserve the authored flag
+    // in a versioned PyChess directive, but render the move tree itself as ordinary
+    // legal PGN so both PyChess and external readers can replay it.
+    const forcedPaths = new Set<string>();
+    for (const [path, node] of tree.byPath) {
+        if (!node.forceVariation) continue;
+        forcedPaths.add(path);
+        node.forceVariation = false;
+    }
+    const annotator = chapter.tags['Annotator']?.trim() || `${study.home}/@/${study.owner}`;
+    const moveText = renderFullTreePgnMoveText(tree, nodeSan, node =>
+        nodeSuffix(node, annotator, forcedPaths.has(node.path)),
+    );
+    const initialComments = annotationComments(tree.root.annotations, true, annotator);
+    const body = [
+        evalComment(tree.root),
+        ...initialComments,
+        gamebookComment(tree.root.gamebook),
+        fullClockComment(tree.root.step.clocks),
+        moveText,
+        chapterResult(chapter),
+    ]
+        .filter((value): value is string => Boolean(value))
+        .join(' ');
+    const headers = chapterTags(study, chapter)
+        .map(([name, value]) => `[${name} "${tagValue(value)}"]`)
+        .join('\n');
+    return `${headers}\n\n${body}\n`;
+}
+
+export function renderStudyPgn(study: StudyPgnContext, chapters: StudyPgnChapterData[]): string {
+    return (
+        [...chapters]
+            .sort((a, b) => a.order - b.order)
+            .map(chapter => renderStudyChapterPgn(study, chapter).trimEnd())
+            .join('\n\n\n') + '\n'
+    );
+}
+
+function exportDataRecord(value: unknown): Record<string, unknown> {
+    if (value === null || typeof value !== 'object' || Array.isArray(value))
+        throw new Error('Invalid Study export data');
+    return value as Record<string, unknown>;
+}
+
+export function parseStudyChapterExportData(value: unknown): StudyPgnChapterData {
+    const data = exportDataRecord(value);
+    const tree = exportDataRecord(data.tree);
+    if (
+        typeof data.id !== 'string' ||
+        typeof data.name !== 'string' ||
+        !Number.isInteger(data.order) ||
+        typeof data.variant !== 'string' ||
+        typeof data.chess960 !== 'boolean' ||
+        typeof data.initialFen !== 'string' ||
+        (data.orientation !== 'white' && data.orientation !== 'black') ||
+        typeof data.description !== 'string' ||
+        data.tags === null ||
+        typeof data.tags !== 'object' ||
+        Array.isArray(data.tags) ||
+        !Array.isArray(tree.nodes)
+    ) {
+        throw new Error('Invalid Study export data');
+    }
+    const tags: Record<string, string> = {};
+    for (const [name, rawValue] of Object.entries(data.tags as Record<string, unknown>)) {
+        if (typeof rawValue !== 'string') throw new Error('Invalid Study export tags');
+        tags[name] = rawValue;
+    }
+    const mode: StudyChapterMode | undefined =
+        data.mode === undefined
+            ? 'normal'
+            : data.mode === 'normal' || data.mode === 'practice' || data.mode === 'conceal' || data.mode === 'gamebook'
+              ? data.mode
+              : undefined;
+    if (!mode) throw new Error('Invalid Study export mode');
+    if (
+        data.concealPly !== undefined &&
+        (!Number.isInteger(data.concealPly) || (data.concealPly as number) < 0 || mode !== 'conceal')
+    )
+        throw new Error('Invalid Study export conceal boundary');
+    return {
+        id: data.id,
+        name: data.name,
+        order: data.order as number,
+        variant: data.variant,
+        chess960: data.chess960,
+        initialFen: data.initialFen,
+        orientation: data.orientation,
+        mode,
+        ...(mode === 'conceal' ? { concealPly: (data.concealPly as number | undefined) ?? 0 } : {}),
+        description: data.description,
+        tags,
+        tree: data.tree as StudyTreeDto,
+        ...(typeof data.variantIni === 'string' ? { variantIni: data.variantIni } : {}),
+        ...(typeof data.createdAt === 'string' ? { createdAt: data.createdAt } : {}),
+    };
+}
+
+export async function fetchStudyChapterExportData(studyId: string, chapterId: string): Promise<StudyPgnChapterData> {
+    const response = await fetch(`/study/${encodeURIComponent(studyId)}/${encodeURIComponent(chapterId)}/export-data`, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) throw new Error(`Study chapter export failed (${response.status})`);
+    return parseStudyChapterExportData(await response.json());
+}
+
+export function studyPgnFilename(studyName: string, chapterName?: string): string {
+    const slug = (value: string) =>
+        value
+            .normalize('NFKD')
+            .replace(/[^A-Za-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .slice(0, 80) || 'study';
+    return chapterName
+        ? `pychess_study_${slug(studyName)}_${slug(chapterName)}.pgn`
+        : `pychess_study_${slug(studyName)}.pgn`;
+}

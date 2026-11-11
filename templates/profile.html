@@ -1,0 +1,187 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="page-menu">
+<aside>
+    {# Preserve the active tab (Rated/Playing/Imported/Games-with-you) when a
+       variant is chosen, so the two filters combine instead of resetting. #}
+    {% set tab_seg = '' %}
+    {% if rated == 1 %}{% set tab_seg = '/rated' %}
+    {% elif rated == -2 %}{% set tab_seg = '/playing' %}
+    {% elif rated == 2 %}{% set tab_seg = '/import' %}
+    {% elif rated == -1 %}{% set tab_seg = '/me' %}{% endif %}
+    <ul class="perfs">
+    <div class="sub-ratings">
+        <a class="info0 all-variants{% if not variant %} active{% endif %}" href="{{ home }}/@/{{ profile | urlencode }}{{ tab_seg }}"{% if not variant %} aria-current="page"{% endif %}>
+            <div class="info2"><span>{{ _('All variants') }}</span></div>
+        </a>
+    </div>
+    {% for key in ratings %}
+    <div class="sub-ratings">
+    <a class="info0 icon {% if ratings[key][1] == 0 %} empty {% endif %} {% if variant == key %} active {% endif %}" data-icon="{{ icons[key] }}" href="{% if tab_seg %}{{ home }}/@/{{ profile }}{{ tab_seg }}?variant={{ key }}{% else %}{{ home }}/@/{{ profile }}/perf/{{ key }}{% endif %}">
+        <div class="info2">
+            <span><h3>{{ variant_display_name(key) }}</h3><rating><strong class="user-rating-strong">{{ ratings[key][0] }}</strong> <span>{% trans count=ratings[key][1] %}{{ count }} game{% pluralize %}{{ count }} games{% endtrans %}</span></rating></span>
+        </div>
+    </a>
+    </div>
+    {% endfor %}
+    </ul>
+</aside>
+<aside>
+    <div class="player-sum box">
+        <div class="player-head">
+            <h1 class="player">
+                {% if profile_patron %}<a href="{{ home }}/patron" title="{{ _('PyChess Patron') }}"><i-side class="profile-user-status {% if profile_online %}online{% else %}offline{% endif %} icon icon-patron-wing"></i-side></a>{% endif %}<player-title>{{ profile_title }}</player-title>{% if profile_title %} {% endif %}{{ profile }}
+            </h1>
+            <div class="trophies">
+            {% for key, kind in trophies %}
+                {% if kind == "shield" %}
+                <a class="shield-trophy combo-trophy" title="{{ variant_display_name(key).title() }} {{ cup[kind][1] }}">{{ icons[key] }}</a>
+                {% else %}
+                <span class="trophy perf {% if kind in ('admin', 'developer') %}award icon3d icon-{{ kind }}{% else %}{{ kind }}{% endif %}" title="{% if kind in ('admin', 'developer') %}{{ cup[kind][1] }}{% else %}{{ variant_display_name(key).title() }} {{ cup[kind][1] }}{% endif %}">
+                    {% if kind not in ('admin', 'developer') %}
+                    <img src="{{ cup[kind][0] }}" alt="{{ variant_display_name(key).title() }} {{ cup[kind][1] }}"></img>
+                    {% endif %}
+                </span>
+                {% endif %}
+            {% endfor %}
+            </div>
+        </div>
+        {% if profile_bot_engine %}
+        <div class="player-engine">
+            <div class="player-engine__name"><span class="player-engine__label">{% trans %}Engine{% endtrans %}</span> {{ profile_bot_engine['name'] }}</div>
+            {% if profile_bot_engine.get('author') %}
+            <div class="player-engine__author"><span class="player-engine__label">{% trans %}Author{% endtrans %}</span> {{ profile_bot_engine['author'] }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        <div class="player-social">
+            {% if profile_system or profile_study_count or (profile_title != "BOT") %}
+            <div class="profile-number-menu">
+                {% if not profile_system %}
+                {% if profile_title != "BOT" %}
+                <a class="nm-item" href="{{ home }}/@/{{ profile | urlencode }}/tournaments"><strong>{{ '%g' | format(profile_tournament_points | default(0)) }}</strong> {% trans %}Tournament points{% endtrans %}</a>
+                {% endif %}
+                {% if (not anon) and (profile_title != "BOT") and profile_simul_count %}
+                <a class="nm-item" href="{{ home }}/@/{{ profile }}/simuls" title="{% trans %}Hosted simuls{% endtrans %}"><strong>{{ profile_simul_count }}</strong> {% trans %}Simuls{% endtrans %}</a>
+                {% endif %}
+                {% if profile_study_count %}
+                <a class="nm-item" href="{{ home }}/study/by/{{ profile | urlencode }}"><strong>{{ profile_study_count }}</strong> {% trans %}Studies{% endtrans %}</a>
+                {% endif %}
+                {% if profile_title != "BOT" %}
+                <a class="nm-item" href="{{ home }}/variants/community?author={{ profile | urlencode }}"><strong>{{ profile_variant_count }}</strong> {% trans %}Variants{% endtrans %}</a>
+                {% endif %}
+                {% endif %}
+                {% if profile_forum_posts %}
+                <a class="nm-item" href="{{ home }}/forum/search?text={{ ('user:' ~ profile) | urlencode }}"><strong>{{ profile_forum_posts }}</strong> {% trans %}Forum posts{% endtrans %}</a>
+                {% endif %}
+                {% if profile_system or ((not anon) and (profile_title != "BOT")) %}
+                <a class="nm-item" href="/blogs/@/{{ profile }}"><strong>{{ ublog_post_count }}</strong> {% trans %}Blog posts{% endtrans %}</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="profile-actions">
+                <div class="btn-rack profile-actions__rack">
+
+            {% if profile_system %}
+            {% if (profile != username) and (not anon) %}
+            {% if (can_follow) and (is_following) %}
+                <a id="unfollow"></a>
+            {% elif can_follow %}
+                <a id="follow"></a>
+            {% endif %}
+            {% endif %}
+            {% else %}
+            <a class="icon icon-tv" href="/@/{{ profile }}/tv" title="{% trans %}Watch games{% endtrans %}">{% trans %}Watch{% endtrans %}</a>
+
+            {% if (profile != username) and (not anon) and (profile_title != "BOT") %}
+            {% if (can_follow) and (is_following) %}
+                <a id="unfollow"></a>
+            {% elif (can_follow) %}
+                <a id="follow"></a>
+            {% endif %}
+            {% if (can_block) %}
+                <a id="block"></a>
+            {% else %}
+                <a id="unblock"></a>
+            {% endif %}
+            {% endif %}
+
+            {% if (can_challenge) and (not anon) and (profile != username) %}
+            <a class="icon icon-crossedswords" href="/@/{{ profile }}/challenge" title="{% trans %}Challenge to a game{% endtrans %}">{% trans %}Challenge{% endtrans %}</a>
+            {% endif %}
+
+            {% if (not anon) and (profile != username) and (profile_title != "BOT") and (can_message) %}
+            <a class="icon icon-comment-o" href="/inbox/{{ profile }}" title="{% trans %}Send a private message{% endtrans %}">{% trans %}Message{% endtrans %}</a>
+            {% endif %}
+            {% if (not anon) and (profile != username) and (profile_title != "BOT") %}
+            <a class="icon icon-warning" href="/report?source=profile&username={{ profile }}&reason=bad_behavior" title="{% trans %}Report to moderators{% endtrans %}">{% trans %}Report{% endtrans %}</a>
+            {% endif %}
+
+            {% if (not anon) and (profile_title != "BOT") %}
+            <a class="icon icon-cloud-upload" href="/paste" title="{% trans %}Import game{% endtrans %}">{% trans %}Import{% endtrans %}</a>
+            {% if can_export_games %}
+            <a class="icon icon-download" href="/api/games/user/{{ profile }}/pgn" download="{{ profile }}.pgn" title="{% trans %}Export games{% endtrans %}">{% trans %}Export{% endtrans %}</a>
+            {% endif %}
+            {% if (lichess_id) %}
+            <a class="icon icon-at" href="https://lichess.org/@/{{ lichess_id }}" rel="noopener" target="_blank" title="{% trans %}Lichess profile{% endtrans %}">{% trans %}Lichess{% endtrans %}</a>
+            {% endif %}
+            {% if (lishogi_id) %}
+            <a class="icon icon-at" href="https://lishogi.org/@/{{ lishogi_id }}" rel="noopener" target="_blank" title="{% trans %}Lishogi profile{% endtrans %}">{% trans %}Lishogi{% endtrans %}</a>
+            {% endif %}
+            {% endif %}
+            {% endif %}
+                    <div class="profile-actions__dropdown" hidden>
+                        <button
+                            class="profile-actions__more"
+                            type="button"
+                            aria-expanded="false"
+                            aria-haspopup="menu"
+                            aria-controls="profile-actions-menu"
+                        >
+                            {% trans %}More{% endtrans %} ▾
+                        </button>
+                        <div id="profile-actions-menu" class="profile-actions__menu" role="menu"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if profile_teams %}
+        <div class="player-teams teams col2">
+            <strong>Teams</strong>
+            {% for profile_team in profile_teams %}
+            <a href="/team/{{ profile_team['team']['_id'] }}">
+                <span class="profile-team__name">{{ profile_team['team']['name'] }}</span>
+                {% if profile_team['leader'] %}<span class="profile-team__leader">leader</span>{% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if ublog_posts %}
+        <section class="player-ublog box">
+            <div class="ublog-cards">
+            {% for post in ublog_posts %}
+                <a class="ublog-card ublog-post-card ublog-post-card--link" href="{{ post['url'] }}">
+                    <span class="ublog-post-card__top">
+                        <img class="ublog-card-image ublog-post-card__image{% if not post['image_src'] %} ublog-cover-fallback{% endif %}" src="{{ post['image_src'] or static('images/ublog-default-cover.svg') }}" alt="{{ post['imageAlt'] if post['image_src'] else 'PyChess' }}">
+                        <time class="ublog-post-card__over-image">{{ post['date'] }}</time>
+                        <span class="ublog-post-card__over-image user-link pos-bottom"><player-title>{{ post['author_title'] }} </player-title>{{ post['author'] }}</span>
+                    </span>
+                    <span class="ublog-post-card__content">
+                        <span class="ublog-card-title ublog-post-card__title">{{ post['title'] }}</span>
+                        <span class="ublog-card-intro ublog-post-card__intro">{{ post['intro'] }}</span>
+                    </span>
+                </a>
+            {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+    <div id="placeholder">
+</aside>
+</main>
+</div>
+{% endblock %}
+{% block js %}
+    <script src="{{ js }}"></script>
+{% endblock %}

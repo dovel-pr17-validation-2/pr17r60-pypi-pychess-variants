@@ -1,0 +1,430 @@
+@import "ublog.css";
+
+/* profile games */
+.filter-tabs {
+    display: flex;
+    padding-top: 10px;
+}
+div.filter-tabs div.sub-ratings {
+    flex: auto;
+    font-size: 1.2em;
+}
+div.filter-tabs a {
+    justify-content: center;
+}
+div.versus player:nth-of-type(1) {
+  text-align: end;
+  white-space: normal;
+}
+div.versus vs-swords {
+  font-size: 2em;
+  width: 2.5em;
+  text-align: center;
+}
+.player-sum {
+    display: flex;
+    flex-flow: column;
+}
+.player-head {
+    font-size: 24px;
+    display: flex;
+    padding: 2em 1.5em 1em 1.5em;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-color2);
+}
+.player-head h1 {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+}
+.player-head .profile-user-status {
+    display: inline-block;
+    width: 1.5em;
+    margin-right: 0;
+    text-align: center;
+    vertical-align: top;
+}
+.player-head .profile-user-status::before {
+    margin-right: 0;
+}
+.player-engine {
+    min-width: 0;
+    padding: 0 36px 24px;
+    background: var(--bg-color2);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.player-engine__name {
+    font-weight: 600;
+}
+.player-engine__author {
+    margin-top: 0.25rem;
+}
+.player-engine__label {
+    margin-right: 0.5em;
+    font-weight: normal;
+    color: var(--font-color);
+}
+.player-social {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1vw;
+    background: var(--bg-color2);
+    justify-content: space-between;
+}
+/* Adapted from lila's ui/user/css/_number-menu.scss. */
+.profile-number-menu {
+    display: flex;
+    overflow-x: auto;
+    margin: 0 0 0.2em 1em;
+}
+.profile-number-menu .nm-item {
+    flex: 1 1 auto;
+    min-width: min-content;
+    padding: 0.5em 5px;
+    color: var(--font-color);
+    text-align: center;
+    line-height: 1.4em;
+    white-space: normal;
+    font-size: 0.9em;
+}
+.profile-number-menu .nm-item:hover,
+.profile-number-menu .nm-item:focus-visible {
+    color: var(--link-hover);
+}
+.profile-number-menu strong {
+    display: block;
+    font-weight: normal;
+    font-size: 1.1em;
+}
+
+.player-teams {
+    display: flex;
+    flex-flow: row wrap;
+    padding: 0.8em 1.5em 1.1em;
+    background: var(--bg-color2);
+    border-top: 1px solid var(--border-color);
+}
+.player-teams > strong {
+    flex: 0 0 100%;
+    margin-bottom: 0.3em;
+}
+.player-teams > a {
+    display: flex;
+    flex: 0 0 50%;
+    align-items: baseline;
+    gap: 0.4em;
+    min-width: 0;
+    padding: 0.15em 0.8em 0.15em 0;
+}
+.profile-team__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.profile-team__leader {
+    flex: 0 0 auto;
+    padding: 0.05em 0.35em;
+    border-radius: 3px;
+    color: var(--font-color);
+    opacity: 0.7;
+    background: var(--bg-color1);
+    font-size: 0.78em;
+    text-transform: uppercase;
+}
+.profile-actions {
+    display: flex;
+    flex: 1 0 auto;
+    justify-content: flex-end;
+    min-width: 0;
+    margin: 0 1em 0 0.3em;
+}
+.profile-actions:not(:has(a)) {
+    display: none;
+}
+player-title {
+  white-space: normal;
+}
+.trophies {
+    height: 40px;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    justify-content: flex-end;
+    margin-top: 0 !important;
+}
+.trophy {
+    display: flex;
+    align-items: flex-end;
+    height: 40px;
+    transition: transform 0.2s;
+    margin-right: -8px;
+}
+.trophy:not(.patron):hover, .shield-trophy:not(.patron):hover {
+    transform:translateY(-3px);
+}
+
+.trophy img {
+    height: 80px;
+}
+.trophy.award {
+    speak: none;
+    line-height: 100%;
+    margin-right: 0;
+}
+.trophy.award.icon3d {
+    color: #a8adb3;
+}
+.trophy:not(.award) + .trophy.award {
+    margin-left: 8px;
+}
+.trophy.icon3d {
+    width: 32px;
+    height: 32px;
+    margin-right: 0;
+    font-size: 31px;
+    align-items: center;
+    justify-content: center;
+    color: color-mix(in srgb, var(--font-color) 72%, transparent);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.trophy.icon3d + .trophy.icon3d {
+    margin-left: 6px;
+}
+.trophy.award + .trophy.award {
+    margin-left: 12px;
+}
+.trophy.icon3d::before {
+    display: block;
+    line-height: 1;
+    margin-right: 0;
+}
+.trophy.top1 {
+    filter: drop-shadow(0 0 6px #d59020);
+}
+.combo-trophy {
+    width: 60px;
+    height: 60px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    font-family: 'pychess';
+    text-align: center;
+}
+.shield-trophy {
+    width: 50px;
+    background-image: url(images/trophy/shield-gold.png);
+    font-size: 30px;
+    line-height: 60px;
+    color: #333 !important;
+    text-shadow: 0 0 6px #fff;
+    margin-top: -20px;
+    filter: drop-shadow(0 0 6px #d59020);
+}
+.btn-rack {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    margin: 1em;
+}
+.profile-actions__rack {
+    flex: 0 0 auto;
+    flex-flow: row nowrap;
+    margin: 0;
+}
+.profile-actions__rack > a,
+.profile-actions__more {
+    flex: 0 0 auto;
+    padding: 0 0.6em;
+    text-align: center;
+    line-height: 2rem;
+    border-right: 1px solid var(--border-color);
+    color: var(--font-color);
+    white-space: nowrap;
+    overflow: visible;
+}
+.profile-actions__rack > [class*=" icon-"]::before,
+.profile-actions__rack > [class^="icon-"]::before,
+.profile-actions__menu [class*=" icon-"]::before,
+.profile-actions__menu [class^="icon-"]::before {
+    line-height: 2rem;
+    margin-right: 0.4em;
+}
+.profile-actions__dropdown {
+    position: relative;
+    flex: 0 0 auto;
+}
+.profile-actions__more {
+    display: block;
+    appearance: none;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+}
+.profile-actions__menu {
+    visibility: hidden;
+    position: absolute;
+    z-index: 20;
+    top: 100%;
+    right: -1px;
+    width: min(18em, calc(100vw - 2em));
+    overflow: hidden;
+    background: var(--bg-color2);
+    border: 1px solid var(--border-color);
+    border-radius: 3px 0 3px 3px;
+    box-shadow: var(--base-shadow);
+}
+.profile-actions__menu a {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.6em 1em;
+    line-height: normal;
+    text-align: left;
+    white-space: normal;
+    overflow: visible;
+    color: var(--font-color);
+    border-bottom: 1px solid var(--border-color);
+}
+.profile-actions__menu a:last-child {
+    border-bottom: 0;
+}
+.profile-actions__menu a:hover,
+.profile-actions__menu a:focus-visible {
+    color: var(--font-hover);
+    background: var(--button-new-game-hover);
+}
+.profile-actions__dropdown.is-open .profile-actions__menu {
+    visibility: visible;
+}
+@media (hover: hover) and (pointer: fine) {
+    .profile-actions__dropdown:hover .profile-actions__menu,
+    .profile-actions__dropdown:focus-within .profile-actions__menu {
+        visibility: visible;
+    }
+}
+.i-at, .i-tv, .i-dl, .i-ch {
+    float: right;
+    padding: 0px 4px 0px 4px;
+    color: #505050;
+    text-decoration: none;
+}
+.editor-button-container .i-pgn div:before {
+    padding-right: 6px;
+}
+a.i-at:link, a.i-tv:link, a.i-dl:link, a.i-ch:link, a.i-pgn:link {
+    display: inline-block;
+    text-decoration: none;
+}
+a.i-at:hover, a.i-tv:hover, a.i-dl:hover, a.i-ch:hover {
+    color: RoyalBlue;
+}
+.i-pgn:hover {
+    color: #004f98;
+}
+
+div#profile, table#players {
+    grid-area: content;
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0px;
+    border-radius: 3px;
+    /*box-shadow: var(--base-shadow);*/
+}
+table#games {
+    width: 100%;
+}
+td.player-data {
+    padding: 8px;
+}
+
+#games th {
+    height: 80px;
+    background-color: var(--bg-color2);
+}
+
+#games td.board {
+    padding: 6px 12px 6px 12px;
+    align-self: center;
+}
+
+#games td.board.with-pockets {
+    padding: 46px 12px 44px 12px;
+}
+
+#games tr {
+    border: 1px solid var(--bg-color1);
+    background-color: var(--bg-color2);
+}
+#games tr a {
+    display: flex;
+    width:100%;
+}
+#games tr:nth-child(odd) {
+    width:100%;
+    background-color: var(--bg-color1);
+}
+#games tr player {
+    font-size: 1.3em;
+}
+#games tr player a {
+    display: contents;
+}
+#games tbody tr:hover {
+    width:100%;
+    background-color: var(--game-hover);
+    cursor: pointer;
+}
+#games tr a .icon-trophy {
+    display: contents;
+    color: var(--link-color-blue);
+}
+#games tr a .icon-trophy::before {
+    padding-right: 4px;
+}
+#games a:hover {
+  color: var(--font-hover);
+}
+#games .games-info a:hover {
+  color: var(--link-hover);
+}
+@media (max-width: 799px) and (orientation: portrait) {
+    ul.perfs {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10ch, 1fr));
+    padding-right: 0rem;
+    }
+    .sub-ratings a span rating {
+    display: flex;
+    }
+    .sub-ratings h3, rating span, .sub-ratings a span rating span {
+    display: none;
+    }
+    a.info0.icon {
+    font-size: 0.6rem;
+    }
+    strong.user-rating-strong {
+    font-size: 1rem;
+    }
+    td.board {
+    display:none;
+    }
+    .sub-ratings a::before {
+    margin-right: 0px;
+    }
+    .trophies {
+    display: none;
+    }
+}
+td.board.bug {
+    display: flex;
+}
+td.board.bug selection {
+    padding-right: 10px;
+}

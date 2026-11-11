@@ -1,0 +1,75 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="page-menu players">
+<h1 class="sr-only">{% trans %}Players{% endtrans %}</h1>
+{# NAMED, because this page has TWO asides and `<aside>` carries `complementary` implicitly:
+   unnamed, a landmark list read "complementary, complementary". The table below is headed
+   "Online" and dominates the region; the tournament links above it are secondary. #}
+<aside class="flat-bg" aria-label="{% trans %}Online{% endtrans %}">
+    <h2 class="sr-only">{% trans %}Online{% endtrans %}</h2>
+    {% if admin %}
+    <a class="allplayers-button" href="{{ home }}/allplayers">{% trans %}All players{% endtrans %}</a><br>
+    {% endif %}
+    <a class="allplayers-button" href="{{ home }}/tournaments/winners">{% trans %}Tournament winners{% endtrans %}</a><br>
+    <a class="allplayers-button" href="{{ home }}/tournaments/shields">{% trans %}Tournament shields{% endtrans %}</a>
+    <table id="players">
+        <thead>
+            <tr>
+                <th>{% trans %}Online{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in online_users %}
+            <tr>
+                <td class="player-data">
+                <i-side class="online icon {% if user.patron %}icon-patron-wing{% else %}icon-online{% endif %}"{% if user.patron %} title="{{ _('PyChess Patron') }}"{% endif %}></i-side>
+                <player>
+                    <a class="user-link" href="{{ home }}/@/{{ user.username }}"><player-title>{{ user.title }}</player-title> {{ user.username }}</a>
+                </player>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if anon_online > 0 %}
+            <tr>
+                <td class="player-data">
+                <i-side class="online icon icon-online"></i-side>
+                <player>
+                    <span>{% trans %}Anonymous{% endtrans %}({{ anon_online }})</span>
+                </player>
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</aside>
+{# The per-variant top-score cards. #}
+<aside class="flat-bg" aria-label="{% trans %}Leaderboard{% endtrans %}">
+    <h2 class="sr-only">{% trans %}Leaderboard{% endtrans %}</h2>
+    <div class="highscore">
+        {% for key in highscore %}
+        <div class="card">
+            <div class="info0 icon" data-icon="{{ icons[key] }}">
+                <a href="{{ home }}/players/{{ key }}"><div class="variant" role="heading" aria-level="3">{{ variant_display_name(key) }}</div></a>
+            </div>
+            {% for user, score in highscore[key].items() %}
+                {% set highscore_user = user.split("|")[0] %}
+                <div class="player-data">
+                    <i-side class="{% if highscore_user in highscore_online %}online{% else %}offline{% endif %} icon {% if highscore_user in highscore_patrons %}icon-patron-wing{% elif highscore_user in highscore_online %}icon-online{% else %}icon-offline{% endif %}"{% if highscore_user in highscore_patrons %} title="{{ _('PyChess Patron') }}"{% endif %}></i-side>
+                    <player>
+                        <a class="user-link" href="{{ home }}/@/{{ highscore_user }}"><player-title>{{ user.split("|")[1] }}</player-title> {{ highscore_user }}</a>
+                        <rating>{{ score }}</rating>
+                    </player>
+                </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</aside>
+</main>
+</div>
+{% endblock %}
+{% block js %}
+    <script src="{{ js }}"></script>
+{% endblock %}
+

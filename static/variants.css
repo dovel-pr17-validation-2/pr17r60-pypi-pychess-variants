@@ -1,0 +1,669 @@
+@import "group-colors.css";
+.guide p img, .guide table {
+    margin: 0 auto;
+}
+.guide p img {
+    display: block;
+}
+.guide table th, .guide table td {
+    text-align: center;
+    padding: 4px;
+}
+div.guide ol, div.guide ul {
+    list-style-position: inside;
+    padding: 1.2rem;
+    margin: 0;
+}
+
+.community-variants-page,
+.catalogued-variant-rules {
+    max-width: 1100px;
+}
+
+.catalogued-variant-rules {
+    color: var(--font-color);
+}
+
+div.guide .catalogued-variant-rules h1,
+div.guide .catalogued-variant-rules h2,
+div.guide .catalogued-variant-rules .catalogued-variant-description,
+div.guide .catalogued-variant-rules .catalogued-variant-references,
+.catalogued-variant-intro,
+div.guide .catalogued-variant-rules .catalogued-variant-kicker {
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+    text-align: left;
+}
+
+div.guide .catalogued-variant-rules h1 {
+    display: block;
+}
+
+.catalogued-variant-hero {
+    display: flex;
+    gap: 1rem 1.5rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    /* Reset the global site header rule.  site.css styles every <header>
+       as the fixed-height top navigation bar, but this header is ordinary
+       page content and must grow with its children. */
+    height: auto;
+    max-width: none;
+    z-index: auto;
+    padding: 1rem 1.2rem;
+    margin-top: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-box);
+    box-shadow: var(--base-shadow);
+}
+
+.catalogued-variant-hero h1 {
+    margin: 0;
+    text-align: left;
+}
+
+.catalogued-variant-kicker {
+    margin: 0 0 0.35rem;
+    padding: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    font-weight: bold;
+    opacity: 0.72;
+}
+
+.catalogued-variant-hero-copy {
+    display: grid;
+    gap: 0.65rem;
+    flex: 1 1 32rem;
+    min-width: 0;
+}
+
+.catalogued-variant-description {
+    color: var(--font-color);
+}
+
+.catalogued-variant-references {
+    font-size: 0.92rem;
+}
+
+.catalogued-variant-intro {
+    font-style: italic;
+    max-width: 60ch;
+    opacity: 0.9;
+    margin-top: 20px;
+}
+
+.catalogued-variant-meta {
+    display: grid;
+    gap: 0.7rem;
+    align-content: start;
+    margin: 0;
+    flex: 0 1 18rem;
+    min-width: 15rem;
+}
+
+.catalogued-variant-meta div {
+    padding: 0.7rem 0.85rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-color2);
+}
+
+.catalogued-variant-meta dt {
+    margin: 0;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: bold;
+    opacity: 0.72;
+}
+
+.catalogued-variant-meta dd {
+    margin: 0.35rem 0 0;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.catalogued-variant-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 1rem 0 0;
+    padding: 0;
+}
+
+.catalogued-variant-rules-block {
+    margin-top: 1rem;
+    padding: 1rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-box);
+    box-shadow: var(--base-shadow);
+}
+
+.catalogued-variant-rules-block h2 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    text-align: left;
+}
+
+.community-variants-search {
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: minmax(14rem, 1fr) minmax(10rem, 14rem) minmax(9rem, 12rem) max-content auto;
+    align-items: end;
+    margin: 1rem 0;
+}
+
+.community-variants-search label {
+    display: grid;
+    gap: 0.25rem;
+    font-weight: bold;
+}
+
+.community-variants-search input,
+.community-variants-search select {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.45rem;
+}
+
+.community-variants-checkbox {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    min-height: 2.25rem;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.community-variants-checkbox input {
+    width: auto;
+}
+
+.community-variants-count {
+    opacity: 0.85;
+}
+
+.community-variants-list {
+    display: grid;
+    gap: 0.85rem;
+    margin: 1rem 0;
+}
+
+.community-variant-card {
+    padding: 1rem;
+    border-radius: 8px;
+    background: var(--bg-box, #f7f6f3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.community-variant-card-head {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+.community-variant-card-title {
+    display: flex;
+    gap: 0.35rem 0.75rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.community-variant-favorite {
+    appearance: none;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--font-color);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.4rem;
+    line-height: 1;
+    opacity: 0.68;
+    transition: color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.community-variant-favorite:hover:not(:disabled),
+.community-variant-favorite:focus-visible {
+    background: color-mix(in srgb, #eb5757 12%, transparent);
+    color: #eb5757;
+    opacity: 1;
+}
+
+.community-variant-favorite.is-favorite {
+    color: #eb5757;
+    opacity: 1;
+}
+
+.community-variant-favorite.is-busy {
+    cursor: wait;
+    transform: scale(0.94);
+}
+
+.community-variant-favorite-disabled {
+    cursor: help;
+    opacity: 0.35;
+}
+
+.community-variants-page .community-variant-card h2 {
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.community-variant-fsf-title {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.community-variant-fsf-icon {
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+}
+
+.community-variants-page .community-variant-card p {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    line-height: 1.35;
+}
+
+.community-variants-page .community-variant-card dl {
+    display: flex;
+    gap: 0.35rem 1rem;
+    flex-wrap: wrap;
+    margin: 0.55rem 0 0;
+    line-height: 1.35;
+}
+
+.community-variant-card dl div {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.community-variant-card dt {
+    font-weight: bold;
+}
+
+.community-variant-card dd {
+    margin: 0;
+}
+
+
+.community-variants-page .button,
+.catalogued-variant-rules .button {
+    display: inline-block;
+    border: 1px solid var(--bg-color2);
+    border-radius: 4px;
+    background: var(--bg-box);
+    color: var(--font-color);
+    padding: 0.8em 1em;
+    margin: 2px;
+    box-shadow: var(--base-shadow);
+    line-height: 1.1;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.community-variants-page button.button {
+    font: inherit;
+    cursor: pointer;
+}
+
+.community-variants-page .button:hover:not(:disabled),
+.catalogued-variant-rules .button:hover {
+    background: color-mix(in srgb, var(--link-hover) 12%, var(--bg-box));
+    border-color: color-mix(in srgb, var(--link-hover) 26%, var(--border-color));
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.225);
+}
+
+.community-variants-page .button.catalogued-action-primary,
+.catalogued-variant-rules .button.catalogued-action-primary {
+    border-color: var(--blue-hover);
+    background: var(--blue-hover);
+    color: White;
+}
+
+.community-variants-page .button.catalogued-action-primary:hover,
+.catalogued-variant-rules .button.catalogued-action-primary:hover {
+    border-color: color-mix(in srgb, var(--blue-hover) 84%, #000);
+    background: color-mix(in srgb, var(--blue-hover) 84%, #000);
+    color: White;
+}
+
+.community-variants-page .button.catalogued-action-ai,
+.catalogued-variant-rules .button.catalogued-action-ai {
+    border-color: var(--green-switch);
+    background: var(--green-switch);
+    color: White;
+}
+
+.community-variants-page .button.catalogued-action-ai:hover,
+.catalogued-variant-rules .button.catalogued-action-ai:hover {
+    border-color: var(--green-hover);
+    background: var(--green-hover);
+    color: White;
+}
+
+.community-variants-page .button.catalogued-action-analysis,
+.catalogued-variant-rules .button.catalogued-action-analysis {
+    border-color: color-mix(in srgb, var(--blue-hover) 70%, var(--border-color));
+    background: color-mix(in srgb, var(--blue-hover) 10%, var(--bg-box));
+    color: var(--link-hover);
+}
+
+.community-variants-page .button.catalogued-action-analysis:hover,
+.catalogued-variant-rules .button.catalogued-action-analysis:hover {
+    border-color: var(--blue-hover);
+    background: color-mix(in srgb, var(--blue-hover) 18%, var(--bg-box));
+    color: var(--link-hover);
+}
+
+.community-variant-actions,
+.community-variants-pages {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.community-variants-pages {
+    margin: 1rem 0;
+}
+
+.catalogued-variant-ini {
+    margin: 0;
+    border: 1px solid var(--border-color);
+    background: var(--bg-color2);
+    color: var(--font-color);
+}
+
+@media (max-width: 799px) {
+    .community-variants-search {
+        grid-template-columns: 1fr;
+    }
+
+    .catalogued-variant-hero {
+        display: block;
+        padding: 1rem;
+    }
+
+    .catalogued-variant-rules-block {
+        padding: 1rem;
+    }
+
+    .catalogued-variant-meta {
+        min-width: 0;
+        margin-top: 1rem;
+    }
+}
+
+.catalogued-variant-generated-rules p {
+    margin: 0.7rem 0;
+    max-width: 75ch;
+}
+
+.catalogued-rule-section {
+    margin-top: 1rem;
+}
+
+.catalogued-rule-section h3 {
+    margin: 0 0 0.45rem;
+    padding: 0;
+    text-align: left;
+}
+
+.catalogued-rule-section ul,
+.catalogued-rule-technical-notes ul {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.catalogued-rule-section li,
+.catalogued-rule-technical-notes li {
+    line-height: 1.45;
+}
+
+.catalogued-rule-section code,
+.catalogued-rule-technical-notes code {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 0.1rem 0.25rem;
+    border-radius: 3px;
+    background: var(--bg-color2);
+    font-size: 0.85em;
+    opacity: 0.82;
+}
+
+.catalogued-rule-technical-notes {
+    margin-top: 1rem;
+}
+
+.catalogued-rule-technical-notes summary {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.catalogued-betza-diagrams {
+    overflow: visible;
+}
+
+.cwda-betza-army + .cwda-betza-army {
+    margin-top: 1.5rem;
+}
+
+.catalogued-betza-note {
+    margin: 0 0 1rem;
+    max-width: 75ch;
+    opacity: 0.9;
+}
+
+.catalogued-betza-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.catalogued-betza-card {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-color2);
+}
+
+.catalogued-betza-card figcaption {
+    margin-bottom: 0.6rem;
+}
+
+.catalogued-betza-card figcaption strong {
+    display: block;
+}
+
+.catalogued-betza-card code {
+    box-sizing: border-box;
+    display: block;
+    align-self: center;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 0.6rem;
+    overflow-x: auto;
+    padding: 0.1rem 0.25rem;
+    border-radius: 3px;
+    background: var(--bg-box);
+    font-size: 0.85em;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+.catalogued-betza-svg-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+    overflow-x: auto;
+}
+
+.catalogued-betza-svg {
+    display: block;
+    width: min(100%, 242px);
+    height: auto;
+    border-radius: 4px;
+}
+
+.catalogued-betza-legend {
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.catalogued-betza-legend span {
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.catalogued-betza-legend i {
+    box-sizing: border-box;
+    display: inline-block;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+}
+
+.catalogued-betza-legend-move {
+    color: #f2c94c;
+}
+
+.catalogued-betza-legend-capture {
+    color: #eb5757;
+}
+
+.catalogued-betza-legend-both {
+    border-left-color: #f2c94c !important;
+    border-right-color: #eb5757 !important;
+    border-top-color: #f2c94c !important;
+    border-bottom-color: #eb5757 !important;
+}
+
+.catalogued-betza-legend-initial {
+    color: #56ccf2;
+}
+
+.catalogued-betza-legend-hop {
+    color: #9b51e0;
+    border-style: dashed !important;
+}
+
+.community-variant-card--with-preview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(11rem, 26vw, 15rem);
+    gap: 0.85rem 1.15rem;
+    align-items: start;
+}
+
+.community-variant-card--with-preview .community-variant-card-head {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.community-variant-card-main {
+    min-width: 0;
+}
+
+.community-variant-card--with-preview .community-variant-card-main {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.community-variant-card-preview {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    justify-self: end;
+    width: 100%;
+    max-width: 15rem;
+    line-height: 0;
+}
+
+.catalogued-start-board-figure {
+    display: grid;
+    gap: 0.55rem;
+    width: min(100%, 22rem);
+    margin: 0.35rem auto 0.85rem;
+    justify-items: center;
+}
+
+.catalogued-start-board-preview {
+    width: 100%;
+    line-height: 0;
+}
+
+.catalogued-start-board-preview:empty {
+    aspect-ratio: var(--catalogued-board-ratio, 1);
+}
+
+.community-variant-card-preview .cg-wrap {
+    --mini-board-width: 100%;
+}
+
+.catalogued-start-board-preview .cg-wrap {
+    width: 100%;
+    max-width: 100%;
+}
+
+.catalogued-start-board-preview.with-pockets {
+    padding-block: calc(var(--cg-height) / var(--catalogued-board-ranks, 8));
+}
+
+.catalogued-start-board-figure figcaption {
+    font-size: 0.9rem;
+    opacity: 0.82;
+    text-align: center;
+}
+
+@media (max-width: 699px) {
+    .community-variant-card--with-preview {
+        grid-template-columns: 1fr;
+    }
+
+    .community-variant-card--with-preview .community-variant-card-head,
+    .community-variant-card--with-preview .community-variant-card-main,
+    .community-variant-card-preview {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .community-variant-card-preview {
+        align-self: start;
+        justify-self: start;
+        width: min(12rem, 100%);
+    }
+}

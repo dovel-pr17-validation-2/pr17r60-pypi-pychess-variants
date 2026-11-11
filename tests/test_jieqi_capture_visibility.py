@@ -1,0 +1,103 @@
+import unittest
+
+import test_logger
+from aiohttp.test_utils import AioHTTPTestCase
+from const import RESIGN
+from fairy import BLACK, WHITE
+from game import Game
+from glicko2.glicko2 import new_default_perf_map
+from mongomock_motor import AsyncMongoMockClient
+from pychess_global_app_state_utils import get_app_state
+from user import User
+from variants import VARIANTS
+
+from server import make_app
+
+test_logger.init_test_logger()
+
+PERFS = {"newplayer": new_default_perf_map(VARIANTS)}
+CLOCKS = [0, 0]
+
+
+class JieqiCaptureVisibilityTestCase(AioHTTPTestCase):
+    async def startup(self, app):
+        # Use deterministic users so the test can focus on Jieqi capture behavior.
+        self.wplayer = User(get_app_state(self.app), username="wplayer", perfs=PERFS["newplayer"])
+        self.bplayer = User(get_app_state(self.app), username="bplayer", perfs=PERFS["newplayer"])
+
+    async def get_application(self):
+        app = make_app(db_client=AsyncMongoMockClient(tz_aware=True))
+        app.on_startup.append(self.startup)
+        return app
+
+    async def tearDownAsync(self):
+        await self.client.close()
+
+    async def test_captured_fake_piece_identity_visible_to_capturer_only(self):
+        # Minimal Jieqi position: red rook captures a covered black piece on a2.
+        fen = "4k4/9/9/9/9/9/9/9/p~8/R3K4 w - - 0 1"
+        game = Game(get_app_state(self.app), "12345678", "jieqi", fen, self.wplayer, self.bplayer)
+
+        # The mapping represents the hidden identity under the cover at a2.
+        game.board.jieqi_covered_pieces = {"a2": "n"}
+
+        await game.play_move("a1a2", clocks=CLOCKS)
+
+        capturer_view = game.get_board(full=True, persp_color=WHITE)
+        opponent_view = game.get_board(full=True, persp_color=BLACK)
+        spectator_view = game.get_board(full=True, persp_color=None)
+
+        capturer_san = capturer_view["steps"][-1]["san"]
+        opponent_san = opponent_view["steps"][-1]["san"]
+        spectator_san = spectator_view["steps"][-1]["san"]
+
+        # Captured fake identities must never appear in SAN.
+        self.assertNotIn("=n", capturer_san)
+        self.assertNotIn("=n", opponent_san)
+        self.assertNotIn("=n", spectator_san)
+
+        # Only the capturer should receive the hidden identity list.
+        self.assertEqual(capturer_view.get("jieqiCaptures"), ["n"])
+        self.assertEqual(opponent_view.get("jieqiCaptures"), [])
+        self.assertIsNone(spectator_view.get("jieqiCaptures"))
+
+        # The per-move stack mirrors the move list but only embeds the capturer's identity.
+        self.assertEqual(capturer_view.get("jieqiCaptureStack"), ["n"])
+        self.assertEqual(opponent_view.get("jieqiCaptureStack"), [None])
+        self.assertIsNone(spectator_view.get("jieqiCaptureStack"))
+
+    async def test_captured_fake_piece_identity_revealed_after_game_end(self):
+        fen = "4k4/9/9/9/9/9/9/9/p~8/R3K4 w - - 0 1"
+        game = Game(get_app_state(self.app), "12345678", "jieqi", fen, self.wplayer, self.bplayer)
+
+        game.board.jieqi_covered_pieces = {"a2": "n"}
+
+        await game.play_move("a1a2", clocks=CLOCKS)
+        game.update_status(RESIGN, "1-0")
+
+        capturer_view = game.get_board(full=True, persp_color=WHITE)
+        opponent_view = game.get_board(full=True, persp_color=BLACK)
+        spectator_view = game.get_board(full=True, persp_color=None)
+
+        self.assertEqual(capturer_view.get("jieqiCaptures"), ["n"])
+        self.assertEqual(opponent_view.get("jieqiCaptures"), ["n"])
+        self.assertEqual(spectator_view.get("jieqiCaptures"), ["n"])
+
+        self.assertEqual(capturer_view.get("jieqiCaptureStack"), ["n"])
+        self.assertEqual(opponent_view.get("jieqiCaptureStack"), ["n"])
+        self.assertEqual(spectator_view.get("jieqiCaptureStack"), ["n"])
+
+    async def test_game_end_payload_includes_all_captures(self):
+        game = Game(get_app_state(self.app), "12345678", "jieqi", "", self.wplayer, self.bplayer)
+        game.jieqi_captures[WHITE] = ["n"]
+        game.jieqi_captures[BLACK] = ["r"]
+        game.jieqi_capture_stack = [(WHITE, "n"), (BLACK, "r")]
+
+        response = await game.game_ended(self.wplayer, "resign")
+
+        self.assertEqual(response.get("jieqiCaptures"), ["n", "r"])
+        self.assertEqual(response.get("jieqiCaptureStack"), ["n", "r"])
+
+
+if __name__ == "__main__":
+    unittest.main()

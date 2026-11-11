@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="{{ lang|replace('_', '-') }}">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="description" content="Free Online Chess Variants">
+        <meta property="og:image" content={{ static("favicon/ms-icon-310x310.png") }} />
+        <meta property="og:image:width" content="310" />
+        <meta property="og:image:height" content="310" />
+        <meta name="keywords" content="Chess variants xiangqi janggi shogi dobutsu gorogoro kyoto tori makruk sittuyin asean makpong capablanca seirawan grand shako shogun synochess orda shinobi empire chak chennis duck spartan">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="theme-color" content="#dbd7d1"><title>{{ title }}</title>
+        <link rel="stylesheet" href={{ static("chessground.css") }}>
+        <link rel="stylesheet" href={{ static("board.css") }} crossorigin="anonymous">
+        <link rel="stylesheet" href={{ static("extensions.css") }}>
+        <link rel="stylesheet" href={{ static("style.css") }}>
+        <link rel="stylesheet" href={{ static("preview.css") }}>
+        <link rel="stylesheet" href={{ static("site.css") }}>
+        <link rel="stylesheet" href={{ static("blog-cards.css") }}>
+        <link rel="stylesheet" href={{ static("flatpickr.css") }}>
+        <link rel="stylesheet" href={{ static("reconnecting.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/properties.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/page-shell.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/layout/shared.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/layout/landscape.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/layout/tall-landscape.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/layout/short-landscape.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/layout/portrait.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/stacks.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/seats/strips.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/seats/usernames.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/seats/clocks.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/seats/pockets.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/chat.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/presets.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/movelist.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/tabs.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/engine.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/game-info.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/components/movetime-chart.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/override-commons.css") }}>
+        <link rel="stylesheet" href={{ static("two-boards/bughouse-lobby.css") }}>
+        <link rel="stylesheet" href={{ static("piece/mono/mono.css") }}>
+        {% if admin_section and view_css != "admin.css" %}
+        <link rel="stylesheet" href={{ static("admin.css") }}>
+        {% endif %}
+        <link rel="stylesheet" href={{ static(view_css) }}>
+        {% if view in ["round", "tv", "analysis", "study", "puzzle", "editor", "embed", "paste"] %}
+        <link
+            rel="preload"
+            href={{ local_static("ffish-alice.wasm" if variant == "alice" else "ffish.wasm") }}
+            as="fetch"
+            type="application/wasm"
+            crossorigin="anonymous"
+        >
+        {% elif prefetch_ffish|default(false) %}
+        <link
+            rel="prefetch"
+            href={{ local_static("ffish-alice.wasm" if variant == "alice" else "ffish.wasm") }}
+            as="fetch"
+            type="application/wasm"
+            crossorigin="anonymous"
+        >
+        {% endif %}
+        <link rel="icon" href={{ static("favicon/favicon.ico") }} type="image/x-icon" />
+    </head>
+    <body id="pychess-variants" style="--zoom:80;"
+                                data-dev="{{ dev }}"
+                                data-view="{{ view }}"
+                                data-asset-url="{{ asseturl }}"
+                                data-nnue-download-root="{{ nnue_download_root }}"
+                                data-lang="{{ lang }}"
+                                data-theme="{{ theme }}"
+                                data-game-category="{{ game_category }}"
+                                data-game-category-intro="{{ game_category_intro }}"
+                                {% if catalogued_variants is defined %}data-catalogued-variants="{{ catalogued_variants }}"{% endif %}
+                                data-pm-friends-only="{{ pm_friends_only }}"
+                                data-corr-push-enabled="{{ corr_push_enabled }}"
+                                data-corr-browser-enabled="{{ corr_browser_enabled }}"
+                                data-rr-push-enabled="{{ rr_push_enabled }}"
+                                data-home="{{ home }}"
+                                data-username="{{ username }}"
+                                data-csrf-token="{{ csrf_token|default('') }}"
+                                data-admin="{{ admin }}"
+                                data-email="{{ email }}"
+                                data-anon="{{ anon }}"
+                                data-gameid="{{ gameid }}"
+                                data-tournamentid="{{ tournamentid }}"
+                                data-tournamentname="{{ tournamentname }}"
+                                data-simulid="{{ simulid }}"
+                                data-simulname="{{ simulname }}"
+                                data-inviter="{{ inviter }}"
+                                data-bot-challenge-status="{{ bot_challenge_status }}"
+                                data-bot-challenge-decline-reason="{{ bot_challenge_decline_reason }}"
+                                data-bot-challenge-opponent="{{ bot_challenge_opponent }}"
+                                data-bot-supported-variants="{{ bot_supported_variants }}"
+                                data-ply="{{ ply }}"
+                                data-initialfen="{{ initialFen}}"
+                                data-ct="{{ ct }}"
+                                data-board="{{ board }}"
+                                data-date="{{ date }}"
+                                data-result="{{ result }}"
+                                data-status="{{ status }}"
+                                data-tsystem="{{ system }}"
+                                data-rounds="{{ rounds }}"
+                                data-profile="{{ profile }}"
+                                data-profile-restricted="{{ profile_restricted }}"
+                                data-title="{{ profile_title }}"
+                                data-variant="{{ variant }}"
+                                data-chess960="{{ chess960 }}"
+                                data-rated="{{ rated }}"
+                                data-corr="{{ corr }}"
+                                data-level="{{ level }}"
+                                data-wplayer="{{ wplayer }}"
+                                data-wtitle="{{ wtitle }}"
+                                data-wpatron="{{ wpatron }}"
+                                data-wrating="{{ wrating }}"
+                                data-wrdiff="{{ wrdiff }}"
+                                data-wberserk="{{ wberserk }}"
+                                data-bplayer="{{ bplayer }}"
+                                data-btitle="{{ btitle }}"
+                                data-bpatron="{{ bpatron }}"
+                                data-brating="{{ brating }}"
+                                data-brdiff="{{ brdiff }}"
+                                data-bberserk="{{ bberserk }}"
+                                data-fen="{{ fen }}"
+                                data-posnum="{{ posnum }}"
+                                data-base="{{ base }}"
+                                data-inc="{{ inc }}"
+                                data-byo="{{ byo }}"
+                                data-seekempty="{{ seekempty }}"
+                                data-puzzle="{{ puzzle }}"
+                                data-corrgames="{{ corr_games }}"
+                                data-simulgames="{{ simul_games }}"
+                                data-simulhost="{{ simulhost }}"
+                                data-blogs="{{ blogs }}"
+                                data-timeline="{{ timeline }}"
+                                data-tournamentcreator="{{ tournamentcreator }}"
+                                data-tournamentmanager="{{ tournamentmanager }}"
+                                data-tournamentteamid="{{ tournamentteamid }}"
+                                data-tournamentteamname="{{ tournamentteamname }}"
+                                data-tournamentdirector="{{ tournamentdirector }}"
+                                data-challengeid="{{ challengeid }}"
+                                {% if oauth_username_selection %}
+                                data-oauth-id="{{ oauth_username_selection.oauth_id }}"
+                                data-oauth-provider="{{ oauth_username_selection.oauth_provider }}"
+                                data-oauth-username="{{ oauth_username_selection.oauth_username }}"
+                                data-oauth-email="{{ oauth_username_selection.oauth_email }}"
+                                {% endif %}
+
+                                data-wplayer-b="{{ wplayerB }}"
+                                data-wtitle-b="{{ wtitleB }}"
+                                data-wpatron-b="{{ wpatronB }}"
+                                data-wrating-b="{{ wratingB }}"
+                                data-bplayer-b="{{ bplayerB }}"
+                                data-btitle-b="{{ btitleB }}"
+                                data-bpatron-b="{{ bpatronB }}"
+                                data-brating-b="{{ bratingB }}"
+                                data-study="{{ study_data|default('') }}"
+                                data-study-enabled-modes="{{ study_enabled_modes|default('') }}"
+                                data-vapid="{{ vapid_public_key }}"
+    >
+        {% block header %}{% endblock %}
+        <div id="main-content"></div>
+        {% block content %}{% endblock %}
+        <a id="reconnecting" class="link text" data-icon="p"><info-date id="reconnecting-ts" timestamp=""></info-date></a>
+    </body>
+</html>
+{% block js %}{% endblock %}

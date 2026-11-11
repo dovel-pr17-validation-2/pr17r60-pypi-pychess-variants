@@ -1,0 +1,29 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="page-menu legal-page">
+<aside></aside>
+<div class="guide legal-doc account-action account-action--danger">
+<section class="account-action__panel">
+    <h1>Delete account (GDPR erase)</h1>
+    <p class="account-action__lead">
+    This action disables your account and anonymizes/removes personal account data in application
+    records where appropriate. Team memberships and join requests are removed, teams you created
+    are archived, and authored team updates are erased. Public game archives may remain for
+    integrity and anti-abuse reasons.
+    </p>
+    <p>Account deletion is handled by site admins so that we can verify your identity before irreversible erasure.
+    <a href="/contact">Contact site admins</a> and include your PyChess username to request deletion.
+    Being signed in or approving an OAuth sign-in does not by itself authorize deletion.</p>
+    <div class="account-action__actions">
+        <a class="account-action__button" href="/contact">Request account deletion</a>
+        <a class="account-action__button account-action__button--secondary" href="/account/close">Need a reversible close only?</a>
+    </div>
+</section>
+</div>
+</main>
+</div>
+{% endblock %}
+{% block js %}
+<script src="{{ js }}"></script>
+{% endblock %}

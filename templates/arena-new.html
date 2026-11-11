@@ -1,0 +1,675 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap" class="is2d">
+    <main class="page-small">
+        <div class="tour__form box box-pad">
+            <h1>{% if edit %}Edit tournament{% else %}Create a new tournament{% endif %}</h1>
+            {% if not tournament_director %}
+            <p class="form-help">
+                User-created Arenas, including team Arenas, are limited to {{ community_arena_max_creations_per_24h }} creation{% if community_arena_max_creations_per_24h != 1 %}s{% endif %}
+                every 24 hours and 20–120 minutes duration. Public Community Arenas may start only within the next
+                24 hours and must leave at least 15 minutes before and after scheduled PyChess system tournaments.
+                Team Arenas may be scheduled farther ahead and are not restricted by the public Arena schedule.
+                Team Round-Robin and Swiss tournaments are limited to {{ fixed_round_max_creations_per_24h }} creation{% if fixed_round_max_creations_per_24h != 1 %}s{% endif %}
+                per user every 24 hours.
+            </p>
+            {% endif %}
+            {% if edit %}
+            {% set t_name = tournament.name %}
+            {% set t_rated = tournament.rated %}
+            {% set t_variant = tournament.variant + ('960' if tournament.chess960 else '') %}
+            {% set t_base = tournament.base %}
+            {% set t_inc = tournament.inc %}
+            {% set t_byo = tournament.byoyomi_period %}
+            {% set t_minutes = tournament.minutes %}
+            {% set t_before_start = tournament.before_start %}
+            {% set t_description = tournament.description %}
+            {% set t_fen = tournament.fen %}
+            {% set t_password = tournament.password %}
+            {% set t_starts_at = tournament.starts_at.isoformat() if tournament.starts_at else '' %}
+            {% set t_ends_at = tournament.ends_at.isoformat() if tournament.ends_at else '' %}
+            {% set t_system = tournament.system %}
+            {% set t_rounds = tournament.rounds %}
+            {% set t_rr_max_players = tournament.rr_join_limit() if tournament.system == 1 else 10 %}
+            {% set t_rr_requires_approval = tournament.rr_requires_approval %}
+            {% set t_round_interval = tournament.round_interval %}
+            {% set t_entry_min_rating = tournament.entry_min_rating %}
+            {% set t_entry_max_rating = tournament.entry_max_rating %}
+            {% set t_entry_min_rated_games = tournament.entry_min_rated_games %}
+            {% set t_entry_min_account_age_days = tournament.entry_min_account_age_days %}
+            {% set t_forbidden_pairings = tournament.forbidden_pairings %}
+            {% set t_manual_pairings = tournament.manual_pairings %}
+            {% set t_team_id = tournament.team_id %}
+            <form id="tournament-form" method="post" class="form3" action="/tournaments/{{ tournament.id }}/edit">
+            {% else %}
+            {% set t_name = '' %}
+            {% set t_rated = rated %}
+            {% set t_variant = variant %}
+            {% set t_base = 2.0 %}
+            {% set t_inc = 0 %}
+            {% set t_byo = 0 %}
+            {% set t_minutes = 45 %}
+            {% set t_before_start = 5 %}
+            {% set t_description = '' %}
+            {% set t_fen = '' %}
+            {% set t_password = '' %}
+            {% set t_starts_at = '' %}
+            {% set t_ends_at = '' %}
+            {% set t_system = 0 %}
+            {% set t_rounds = 5 %}
+            {% set t_rr_max_players = 10 %}
+            {% set t_rr_requires_approval = false %}
+            {% set t_round_interval = -1 %}
+            {% set t_entry_min_rating = 0 %}
+            {% set t_entry_max_rating = 0 %}
+            {% set t_entry_min_rated_games = 0 %}
+            {% set t_entry_min_account_age_days = 0 %}
+            {% set t_forbidden_pairings = '' %}
+            {% set t_manual_pairings = '' %}
+            {% set t_team_id = selected_tournament_team_id %}
+            <form id="tournament-form" method="post" class="form3" action="/tournaments/new">
+            {% endif %}
+            {% set minute_values = [20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 100, 110, 120, 150, 180, 210, 240, 270, 300, 330, 360, 420, 480, 540, 600, 720] %}
+            {% set rated_game_choices = [
+                (0, 'No restriction'),
+                (5, '5 rated games'),
+                (10, '10 rated games'),
+                (15, '15 rated games'),
+                (20, '20 rated games'),
+                (30, '30 rated games'),
+                (40, '40 rated games'),
+                (50, '50 rated games'),
+                (75, '75 rated games'),
+                (100, '100 rated games'),
+                (150, '150 rated games'),
+                (200, '200 rated games')
+            ] %}
+            {% set rated_game_values = [0, 5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200] %}
+            {% set min_rating_choices = [
+                (0, 'No restriction'),
+                (1000, '1000'),
+                (1100, '1100'),
+                (1200, '1200'),
+                (1300, '1300'),
+                (1400, '1400'),
+                (1500, '1500'),
+                (1600, '1600'),
+                (1700, '1700'),
+                (1800, '1800'),
+                (1900, '1900'),
+                (2000, '2000'),
+                (2100, '2100'),
+                (2200, '2200'),
+                (2300, '2300'),
+                (2400, '2400'),
+                (2500, '2500'),
+                (2600, '2600')
+            ] %}
+            {% set min_rating_values = [0, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600] %}
+            {% set max_rating_choices = [
+                (0, 'No restriction'),
+                (2200, '2200'),
+                (2100, '2100'),
+                (2000, '2000'),
+                (1900, '1900'),
+                (1800, '1800'),
+                (1700, '1700'),
+                (1600, '1600'),
+                (1500, '1500'),
+                (1400, '1400'),
+                (1300, '1300'),
+                (1200, '1200'),
+                (1100, '1100'),
+                (1000, '1000'),
+                (900, '900'),
+                (800, '800')
+            ] %}
+            {% set max_rating_values = [0, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500, 1400, 1300, 1200, 1100, 1000, 900, 800] %}
+            {% set account_age_choices = [
+                (0, 'No restriction'),
+                (1, '1 day'),
+                (3, '3 days'),
+                (7, '7 days'),
+                (14, '14 days'),
+                (30, '1 month'),
+                (60, '2 months'),
+                (90, '3 months'),
+                (180, '6 months'),
+                (365, '1 year'),
+                (730, '2 years'),
+                (1095, '3 years')
+            ] %}
+            {% set account_age_values = [0, 1, 3, 7, 14, 30, 60, 90, 180, 365, 730, 1095] %}
+                <div class="form-group">
+                    <label class="form-label" for="form3-name">Name</label>
+                    <div>
+                        <input id="form3-name" name="name" value="{{ t_name }}" class="form-control" minlength="2" maxlength="30" />
+                        <br />
+                        <small class="form-help">Pick a very safe name for the tournament.
+                            <br />Leave empty to name the tournament after a notable chess player (Not implemented on pychess atm!).
+                        </small>
+                    </div>
+                </div>
+                <div class="form-group form-half">
+                    <label class="form-label" for="form3-system">Tournament type</label>
+                    {% set can_create_fixed_round = tournament_teams or (dev and tournament_director) %}
+                    <select id="form3-system" name="system" class="form-control"{% if edit %} disabled="disabled"{% endif %}>
+                        <option value="0"{% if t_system == 0 %} selected="selected"{% endif %}>Arena</option>
+                        <option value="1"{% if t_system == 1 %} selected="selected"{% endif %}{% if not can_create_fixed_round and not edit %} disabled="disabled"{% endif %}>Round-Robin{% if not can_create_fixed_round and not edit %} (team leader only){% endif %}</option>
+                        <option value="2"{% if t_system == 2 %} selected="selected"{% endif %}{% if not can_create_fixed_round and not edit %} disabled="disabled"{% endif %}>Swiss{% if not can_create_fixed_round and not edit %} (team leader only){% endif %}</option>
+                    </select>
+                    <small id="form3-system-help" class="form-help">Arena runs continuously until the clock expires. Swiss and Round-Robin are fixed-round events.</small>
+                    {% if not edit and tournament_teams %}
+                    <small class="form-help">Team Arenas, Round-Robin, and Swiss tournaments can be created by members with the team's tournament permission.</small>
+                    {% elif not edit and not (dev and tournament_director) %}
+                    <small class="form-help">Join or create a team and get its tournament permission to create team Arenas, Round-Robin, or Swiss tournaments.</small>
+                    {% elif not edit %}
+                    <small class="form-help">DEV tournament directors may also create teamless fixed-round tournaments for testing.</small>
+                    {% endif %}
+                    {% if edit %}
+                    <input type="hidden" name="system" value="{{ t_system }}" />
+                    <small class="form-help">Tournament type cannot be changed after creation.</small>
+                    {% endif %}
+                </div>
+                {% if tournament_teams or t_team_id %}
+                <div id="form3-team-wrap" class="form-group form-half">
+                    <label class="form-label" for="form3-team">Team</label>
+                    <div>
+                        <select id="form3-team" name="teamId" class="form-control" data-team-optional="{{ 'true' if dev and tournament_director else 'false' }}"{% if edit %} disabled="disabled"{% endif %}>
+                            <option value="">No team restriction</option>
+                            {% for team in tournament_teams %}
+                            <option value="{{ team['_id'] }}"{% if t_team_id == team['_id'] %} selected="selected"{% endif %}>{{ team['name'] }}</option>
+                            {% endfor %}
+                        </select>
+                        <small id="form3-team-help" class="form-help">{% if t_system == 0 %}Optional. Select a team to restrict this Arena to current team members.{% else %}Required for production Round-Robin and Swiss. Only current team members can join team tournaments.{% endif %}</small>
+                        {% if edit %}<input type="hidden" name="teamId" value="{{ t_team_id }}" />{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="form-split">
+                    <div class="form-check form-group">
+                        <div>
+                            <label class="form-label" for="form3-rated">Rated</label>
+                            <span class="form-check-input">
+                                <input id="form3-rated" name="rated" value="1" type="checkbox" class="form-control cmn-toggle" {% if t_rated %}checked{% endif %}/>
+                            </span>
+                        </div>
+                        <small class="form-help">Games are rated
+                            <br />and impact players ratings
+                        </small>
+                    </div>
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-variant-search">Variant</label>
+                        <div id="form3-variant-picker" class="variant-picker">
+                            <input
+                                id="form3-variant-search"
+                                type="search"
+                                class="form-control variant-picker-search"
+                                autocomplete="off"
+                                spellcheck="false"
+                                role="combobox"
+                                aria-autocomplete="list"
+                                aria-controls="form3-variant-results"
+                                aria-expanded="false"
+                                placeholder="Search variants"
+                            />
+                            <select id="form3-variant" name="variant" class="variant-picker-source" tabindex="-1" aria-hidden="true">
+                                {% if favorite_variants %}
+                                <optgroup label="Favorites" data-kind="favorite">
+                                    {% for key in favorite_variants %}
+                                    <option value="{{ key }}" data-kind="favorite"{% if key == t_variant %} selected="selected"{% endif %}>{{ variant_display_name(key).title() }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                                <optgroup label="Site variants" data-kind="site">
+                                    {% for key in site_variants %}
+                                    <option value="{{ key }}" data-kind="site"{% if key == t_variant %} selected="selected"{% endif %}>{{ variant_display_name(key).title() }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% if community_variants_for_tournaments %}
+                                <optgroup label="Community variants" data-kind="community">
+                                    {% for key in community_variants_for_tournaments %}
+                                    <option value="{{ key }}" data-kind="community"{% if key == t_variant %} selected="selected"{% endif %}>{{ variant_display_name(key).title() }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                            </select>
+                            <div id="form3-variant-results" class="variant-picker-results" role="listbox" hidden></div>
+                        </div>
+                        <small class="form-help">Favorites and site variants are shown first. Type to search all public community variants.</small>
+                    </div>
+                </div>
+                <div class="form-split">
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-clockTime">Clock initial time</label>
+                        <select id="form3-clockTime" name="clockTime" class="form-control">
+                            <option value="0.0"{% if t_base == 0.0 %} selected="selected"{% endif %}>0 minute</option>
+                            <option value="0.25"{% if t_base == 0.25 %} selected="selected"{% endif %}>¼ minute</option>
+                            <option value="0.5"{% if t_base == 0.5 %} selected="selected"{% endif %}>½ minute</option>
+                            <option value="0.75"{% if t_base == 0.75 %} selected="selected"{% endif %}>¾ minute</option>
+                            <option value="1.0"{% if t_base == 1.0 %} selected="selected"{% endif %}>1 minute</option>
+                            <option value="1.5"{% if t_base == 1.5 %} selected="selected"{% endif %}>1.5 minutes</option>
+                            <option value="2.0"{% if t_base == 2.0 %} selected="selected"{% endif %}>2 minutes</option>
+                            <option value="3.0"{% if t_base == 3.0 %} selected="selected"{% endif %}>3 minutes</option>
+                            <option value="4.0"{% if t_base == 4.0 %} selected="selected"{% endif %}>4 minutes</option>
+                            <option value="5.0"{% if t_base == 5.0 %} selected="selected"{% endif %}>5 minutes</option>
+                            <option value="6.0"{% if t_base == 6.0 %} selected="selected"{% endif %}>6 minutes</option>
+                            <option value="7.0"{% if t_base == 7.0 %} selected="selected"{% endif %}>7 minutes</option>
+                            <option value="10.0"{% if t_base == 10.0 %} selected="selected"{% endif %}>10 minutes</option>
+                            <option value="15.0"{% if t_base == 15.0 %} selected="selected"{% endif %}>15 minutes</option>
+                            <option value="20.0"{% if t_base == 20.0 %} selected="selected"{% endif %}>20 minutes</option>
+                            <option value="25.0"{% if t_base == 25.0 %} selected="selected"{% endif %}>25 minutes</option>
+                            <option value="30.0"{% if t_base == 30.0 %} selected="selected"{% endif %}>30 minutes</option>
+                            <option value="40.0"{% if t_base == 40.0 %} selected="selected"{% endif %}>40 minutes</option>
+                            <option value="50.0"{% if t_base == 50.0 %} selected="selected"{% endif %}>50 minutes</option>
+                            <option value="60.0"{% if t_base == 60.0 %} selected="selected"{% endif %}>60 minutes</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-clockIncrement">Clock increment</label>
+                        <select id="form3-clockIncrement" name="clockIncrement" class="form-control">
+                            <option value="0"{% if t_inc == 0 %} selected="selected"{% endif %}>0 seconds</option>
+                            <option value="1"{% if t_inc == 1 %} selected="selected"{% endif %}>1 second</option>
+                            <option value="2"{% if t_inc == 2 %} selected="selected"{% endif %}>2 seconds</option>
+                            <option value="3"{% if t_inc == 3 %} selected="selected"{% endif %}>3 seconds</option>
+                            <option value="4"{% if t_inc == 4 %} selected="selected"{% endif %}>4 seconds</option>
+                            <option value="5"{% if t_inc == 5 %} selected="selected"{% endif %}>5 seconds</option>
+                            <option value="6"{% if t_inc == 6 %} selected="selected"{% endif %}>6 seconds</option>
+                            <option value="7"{% if t_inc == 7 %} selected="selected"{% endif %}>7 seconds</option>
+                            <option value="10"{% if t_inc == 10 %} selected="selected"{% endif %}>10 seconds</option>
+                            <option value="15"{% if t_inc == 15 %} selected="selected"{% endif %}>15 seconds</option>
+                            <option value="20"{% if t_inc == 20 %} selected="selected"{% endif %}>20 seconds</option>
+                            <option value="25"{% if t_inc == 25 %} selected="selected"{% endif %}>25 seconds</option>
+                            <option value="30"{% if t_inc == 30 %} selected="selected"{% endif %}>30 seconds</option>
+                            <option value="40"{% if t_inc == 40 %} selected="selected"{% endif %}>40 seconds</option>
+                            <option value="50"{% if t_inc == 50 %} selected="selected"{% endif %}>50 seconds</option>
+                            <option value="60"{% if t_inc == 60 %} selected="selected"{% endif %}>60 seconds</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-split">
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-byoyomiPeriod">Byoyomi periods</label>
+                        <select id="form3-byoyomiPeriod" name="byoyomiPeriod" class="form-control">
+                            <option value="0"{% if t_byo == 0 %} selected="selected"{% endif %}>0</option>
+                            <option value="1"{% if t_byo == 1 %} selected="selected"{% endif %}>1</option>
+                            <option value="2"{% if t_byo == 2 %} selected="selected"{% endif %}>2</option>
+                            <option value="3"{% if t_byo == 3 %} selected="selected"{% endif %}>3</option>
+                        </select>
+                        <small class="form-help">Only available for variants that support byoyomi time controls.</small>
+                    </div>
+                </div>
+                <div class="form-split">
+                    <div id="form3-rounds-wrap" class="form-group form-half">
+                        <label id="form3-rounds-label" class="form-label" for="form3-rounds">Rounds</label>
+                        <select id="form3-rounds" name="rounds" class="form-control">
+                            <option value="0"{% if t_rounds == 0 %} selected="selected"{% endif %}>Not used in Arena</option>
+                            <option value="3"{% if t_rounds == 3 %} selected="selected"{% endif %}>3 rounds</option>
+                            <option value="4"{% if t_rounds == 4 %} selected="selected"{% endif %}>4 rounds</option>
+                            <option value="5"{% if t_rounds == 5 %} selected="selected"{% endif %}>5 rounds</option>
+                            <option value="6"{% if t_rounds == 6 %} selected="selected"{% endif %}>6 rounds</option>
+                            <option value="7"{% if t_rounds == 7 %} selected="selected"{% endif %}>7 rounds</option>
+                            <option value="8"{% if t_rounds == 8 %} selected="selected"{% endif %}>8 rounds</option>
+                            <option value="9"{% if t_rounds == 9 %} selected="selected"{% endif %}>9 rounds</option>
+                            <option value="10"{% if t_rounds == 10 %} selected="selected"{% endif %}>10 rounds</option>
+                            <option value="12"{% if t_rounds == 12 %} selected="selected"{% endif %}>12 rounds</option>
+                            <option value="15"{% if t_rounds == 15 %} selected="selected"{% endif %}>15 rounds</option>
+                        </select>
+                        <small id="form3-rounds-help" class="form-help">Choose how many rounds the fixed-round tournament will play.</small>
+                    </div>
+                    <div id="form3-rrMaxPlayers-wrap" class="form-group form-half">
+                        <label class="form-label" for="form3-rrMaxPlayers">Max players (Round-Robin)</label>
+                        <select id="form3-rrMaxPlayers" name="rrMaxPlayers" class="form-control">
+                            <option value="3"{% if t_rr_max_players == 3 %} selected="selected"{% endif %}>3 players</option>
+                            <option value="4"{% if t_rr_max_players == 4 %} selected="selected"{% endif %}>4 players</option>
+                            <option value="5"{% if t_rr_max_players == 5 %} selected="selected"{% endif %}>5 players</option>
+                            <option value="6"{% if t_rr_max_players == 6 %} selected="selected"{% endif %}>6 players</option>
+                            <option value="7"{% if t_rr_max_players == 7 %} selected="selected"{% endif %}>7 players</option>
+                            <option value="8"{% if t_rr_max_players == 8 %} selected="selected"{% endif %}>8 players</option>
+                            <option value="9"{% if t_rr_max_players == 9 %} selected="selected"{% endif %}>9 players</option>
+                            <option value="10"{% if t_rr_max_players == 10 %} selected="selected"{% endif %}>10 players</option>
+                            <option value="11"{% if t_rr_max_players == 11 %} selected="selected"{% endif %}>11 players</option>
+                            <option value="12"{% if t_rr_max_players == 12 %} selected="selected"{% endif %}>12 players</option>
+                            <option value="13"{% if t_rr_max_players == 13 %} selected="selected"{% endif %}>13 players</option>
+                            <option value="14"{% if t_rr_max_players == 14 %} selected="selected"{% endif %}>14 players</option>
+                            <option value="15"{% if t_rr_max_players == 15 %} selected="selected"{% endif %}>15 players</option>
+                            <option value="16"{% if t_rr_max_players == 16 %} selected="selected"{% endif %}>16 players</option>
+                        </select>
+                        <small id="form3-rrMaxPlayers-help" class="form-help">Choose the maximum field size. The actual round count is determined when the tournament starts.</small>
+                    </div>
+                    <div id="form3-rrApproval-wrap" class="form-check form-group">
+                        <div>
+                            <label class="form-label" for="form3-rrRequiresApproval">Join requests require organizer approval</label>
+                            <span class="form-check-input">
+                                <input id="form3-rrRequiresApproval" name="rrRequiresApproval" value="1" type="checkbox" class="form-control cmn-toggle" {% if t_rr_requires_approval %}checked{% endif %}/>
+                            </span>
+                        </div>
+                        <small class="form-help">The organizer approves or denies RR join requests before the field is frozen at start.</small>
+                    </div>
+                    <div id="form3-roundInterval-wrap" class="form-group form-half">
+                        <label class="form-label" for="form3-roundInterval">Interval between rounds</label>
+                        <select id="form3-roundInterval" name="roundInterval" class="form-control">
+                            <option value="auto"{% if t_round_interval == -1 or (t_system != 0 and t_round_interval == 0) %} selected="selected"{% endif %}>automatic</option>
+                            <option value="manual"{% if t_round_interval == -2 %} selected="selected"{% endif %}>manual start</option>
+                            <option value="5"{% if t_round_interval == 5 %} selected="selected"{% endif %}>5s</option>
+                            <option value="10"{% if t_round_interval == 10 %} selected="selected"{% endif %}>10s</option>
+                            <option value="20"{% if t_round_interval == 20 %} selected="selected"{% endif %}>20s</option>
+                            <option value="30"{% if t_round_interval == 30 %} selected="selected"{% endif %}>30s</option>
+                            <option value="45"{% if t_round_interval == 45 %} selected="selected"{% endif %}>45s</option>
+                            <option value="60"{% if t_round_interval == 60 %} selected="selected"{% endif %}>1m</option>
+                            <option value="120"{% if t_round_interval == 120 %} selected="selected"{% endif %}>2m</option>
+                            <option value="180"{% if t_round_interval == 180 %} selected="selected"{% endif %}>3m</option>
+                            <option value="300"{% if t_round_interval == 300 %} selected="selected"{% endif %}>5m</option>
+                            <option value="600"{% if t_round_interval == 600 %} selected="selected"{% endif %}>10m</option>
+                            <option value="900"{% if t_round_interval == 900 %} selected="selected"{% endif %}>15m</option>
+                            <option value="1200"{% if t_round_interval == 1200 %} selected="selected"{% endif %}>20m</option>
+                            <option value="1800"{% if t_round_interval == 1800 %} selected="selected"{% endif %}>30m</option>
+                            <option value="2700"{% if t_round_interval == 2700 %} selected="selected"{% endif %}>45m</option>
+                            <option value="3600"{% if t_round_interval == 3600 %} selected="selected"{% endif %}>1h</option>
+                            <option value="86400"{% if t_round_interval == 86400 %} selected="selected"{% endif %}>1d</option>
+                            <option value="172800"{% if t_round_interval == 172800 %} selected="selected"{% endif %}>2d</option>
+                            <option value="604800"{% if t_round_interval == 604800 %} selected="selected"{% endif %}>7d</option>
+                        </select>
+                        <small id="form3-roundInterval-help" class="form-help">Automatic is based on time control and clamped to 10s-1m.</small>
+                    </div>
+                    <div class="form-group form-half">
+                        <label id="form3-minutes-label" class="form-label" for="form3-minutes">Duration</label>
+                        <select id="form3-minutes" name="minutes" class="form-control">
+                            {% if t_minutes not in minute_values %}
+                            <option value="{{ t_minutes }}" selected="selected">{{ t_minutes }} minutes (custom)</option>
+                            {% endif %}
+                            <option value="20"{% if t_minutes == 20 %} selected="selected"{% endif %}>20 minutes</option>
+                            <option value="25"{% if t_minutes == 25 %} selected="selected"{% endif %}>25 minutes</option>
+                            <option value="30"{% if t_minutes == 30 %} selected="selected"{% endif %}>30 minutes</option>
+                            <option value="35"{% if t_minutes == 35 %} selected="selected"{% endif %}>35 minutes</option>
+                            <option value="40"{% if t_minutes == 40 %} selected="selected"{% endif %}>40 minutes</option>
+                            <option value="45"{% if t_minutes == 45 %} selected="selected"{% endif %}>45 minutes</option>
+                            <option value="50"{% if t_minutes == 50 %} selected="selected"{% endif %}>50 minutes</option>
+                            <option value="55"{% if t_minutes == 55 %} selected="selected"{% endif %}>55 minutes</option>
+                            <option value="60"{% if t_minutes == 60 %} selected="selected"{% endif %}>60 minutes</option>
+                            <option value="70"{% if t_minutes == 70 %} selected="selected"{% endif %}>70 minutes</option>
+                            <option value="80"{% if t_minutes == 80 %} selected="selected"{% endif %}>80 minutes</option>
+                            <option value="90"{% if t_minutes == 90 %} selected="selected"{% endif %}>90 minutes</option>
+                            <option value="100"{% if t_minutes == 100 %} selected="selected"{% endif %}>100 minutes</option>
+                            <option value="110"{% if t_minutes == 110 %} selected="selected"{% endif %}>110 minutes</option>
+                            <option value="120"{% if t_minutes == 120 %} selected="selected"{% endif %}>120 minutes</option>
+                            {% if tournament_director %}
+                            <option value="150"{% if t_minutes == 150 %} selected="selected"{% endif %}>150 minutes</option>
+                            <option value="180"{% if t_minutes == 180 %} selected="selected"{% endif %}>180 minutes</option>
+                            <option value="210"{% if t_minutes == 210 %} selected="selected"{% endif %}>210 minutes</option>
+                            <option value="240"{% if t_minutes == 240 %} selected="selected"{% endif %}>240 minutes</option>
+                            <option value="270"{% if t_minutes == 270 %} selected="selected"{% endif %}>270 minutes</option>
+                            <option value="300"{% if t_minutes == 300 %} selected="selected"{% endif %}>300 minutes</option>
+                            <option value="330"{% if t_minutes == 330 %} selected="selected"{% endif %}>330 minutes</option>
+                            <option value="360"{% if t_minutes == 360 %} selected="selected"{% endif %}>360 minutes</option>
+                            <option value="420"{% if t_minutes == 420 %} selected="selected"{% endif %}>420 minutes</option>
+                            <option value="480"{% if t_minutes == 480 %} selected="selected"{% endif %}>480 minutes</option>
+                            <option value="540"{% if t_minutes == 540 %} selected="selected"{% endif %}>540 minutes</option>
+                            <option value="600"{% if t_minutes == 600 %} selected="selected"{% endif %}>600 minutes</option>
+                            <option value="720"{% if t_minutes == 720 %} selected="selected"{% endif %}>720 minutes</option>
+                            {% endif %}
+                        </select>
+                        <small id="form3-minutes-help" class="form-help">Arena uses this as a hard limit. Swiss and Round-Robin use it as an estimate only.</small>
+                    </div>
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-waitMinutes">Time before tournament starts</label>
+                        <select id="form3-waitMinutes" name="waitMinutes" class="form-control">
+                            <option value="1"{% if t_before_start == 1 %} selected="selected"{% endif %}>1 minute</option>
+                            <option value="2"{% if t_before_start == 2 %} selected="selected"{% endif %}>2 minutes</option>
+                            <option value="3"{% if t_before_start == 3 %} selected="selected"{% endif %}>3 minutes</option>
+                            <option value="5"{% if t_before_start == 5 %} selected="selected"{% endif %}>5 minutes</option>
+                            <option value="10"{% if t_before_start == 10 %} selected="selected"{% endif %}>10 minutes</option>
+                            <option value="15"{% if t_before_start == 15 %} selected="selected"{% endif %}>15 minutes</option>
+                            <option value="20"{% if t_before_start == 20 %} selected="selected"{% endif %}>20 minutes</option>
+                            <option value="30"{% if t_before_start == 30 %} selected="selected"{% endif %}>30 minutes</option>
+                            <option value="45"{% if t_before_start == 45 %} selected="selected"{% endif %}>45 minutes</option>
+                            <option value="60"{% if t_before_start == 60 %} selected="selected"{% endif %}>60 minutes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-split">
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-description">Tournament description</label>
+                        <textarea id="form3-description" name="description" class="form-control" rows="4">{{ t_description }}</textarea>
+                        <small class="form-help">Anything special you want to tell the participants? Try to keep it short. Markdown links are available: [name](https://url)</small>
+                    </div>
+                    <div class="form-group form-half position">
+                        <label class="form-label" for="form3-position">Starting position</label>
+                        <input id="form3-position" name="position" value="{{ t_fen }}" class="form-control" />
+                        <small class="form-help">Paste a valid FEN to start every game from a given position.
+                            <br />You can use the
+                            <a href="/editor" rel="noopener" target="_blank">Board editor</a> to generate a FEN position, then paste it here.
+                            <br />Leave empty to start games from the normal initial position.
+                        </small>
+                    </div>
+                </div>
+
+                <div id="form3-entry-wrap-a" class="form-split">
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-entryMinRatedGames">Minimum rated games</label>
+                        <select id="form3-entryMinRatedGames" name="entryMinRatedGames" class="form-control">
+                            {% if t_entry_min_rated_games not in rated_game_values %}
+                            <option value="{{ t_entry_min_rated_games }}" selected="selected">{{ t_entry_min_rated_games }} rated games (custom)</option>
+                            {% endif %}
+                            {% for value, label in rated_game_choices %}
+                            <option value="{{ value }}"{% if t_entry_min_rated_games == value %} selected="selected"{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-help">Required rated games in this variant before a player can join.</small>
+                    </div>
+                </div>
+                <div id="form3-entry-wrap-b" class="form-split">
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-entryMinRating">Minimum rating</label>
+                        <select id="form3-entryMinRating" name="entryMinRating" class="form-control">
+                            {% if t_entry_min_rating not in min_rating_values %}
+                            <option value="{{ t_entry_min_rating }}" selected="selected">{{ t_entry_min_rating }} (custom)</option>
+                            {% endif %}
+                            {% for value, label in min_rating_choices %}
+                            <option value="{{ value }}"{% if t_entry_min_rating == value %} selected="selected"{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-help">Choose No restriction to allow all ratings.</small>
+                    </div>
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-entryMaxRating">Maximum rating</label>
+                        <select id="form3-entryMaxRating" name="entryMaxRating" class="form-control">
+                            {% if t_entry_max_rating not in max_rating_values %}
+                            <option value="{{ t_entry_max_rating }}" selected="selected">{{ t_entry_max_rating }} (custom)</option>
+                            {% endif %}
+                            {% for value, label in max_rating_choices %}
+                            <option value="{{ value }}"{% if t_entry_max_rating == value %} selected="selected"{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-help">Choose No restriction to allow all ratings.</small>
+                    </div>
+                </div>
+                <div id="form3-entry-wrap-c" class="form-split">
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-entryMinAccountAgeDays">Minimum account age</label>
+                        <select id="form3-entryMinAccountAgeDays" name="entryMinAccountAgeDays" class="form-control">
+                            {% if t_entry_min_account_age_days not in account_age_values %}
+                            <option value="{{ t_entry_min_account_age_days }}" selected="selected">{{ t_entry_min_account_age_days }} days (custom)</option>
+                            {% endif %}
+                            {% for value, label in account_age_choices %}
+                            <option value="{{ value }}"{% if t_entry_min_account_age_days == value %} selected="selected"{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-help">Choose No restriction to allow newly created accounts.</small>
+                    </div>
+                </div>
+                <div id="form3-swiss-pairings-wrap-a" class="form-split">
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-forbiddenPairings">Forbidden pairings</label>
+                        <textarea id="form3-forbiddenPairings" name="forbiddenPairings" class="form-control" rows="5">{{ t_forbidden_pairings }}</textarea>
+                        <small class="form-help">One username pair per line, for example <code>alice bob</code>. Automatic Swiss pairing will avoid those pairings for the whole event.</small>
+                    </div>
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-manualPairings">Manual pairings for next round</label>
+                        <textarea id="form3-manualPairings" name="manualPairings" class="form-control" rows="5">{{ t_manual_pairings }}</textarea>
+                        <small class="form-help">One pairing per line as <code>white black</code>, or <code>username 1</code> for a manual bye. This applies to the next Swiss round only and is cleared after use.</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="form3-password">Password</label>
+                    <div>
+                        <input id="form3-password" name="password" value="{{ t_password }}" class="form-control" maxlength="30" />
+                        <small class="form-help">To make the tournament private, add a password.
+                            <br />Players will be prompted to enter it before joining the tournament.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-split">
+                {% if edit and tournament.status != 0 %}
+                    <div class="form-group form-half">
+                        <label class="form-label" for="form3-startDate-display">Start date</label>
+                        <input id="form3-startDate-display" value="{{ t_starts_at }}" class="form-control" disabled="disabled" />
+                        <small class="form-help">The start time cannot be edited after the tournament has started.</small>
+                    </div>
+                    <div id="form3-endDate-display-wrap" class="form-group form-half"{% if t_system != 1 %} style="display:none"{% endif %}>
+                        <label class="form-label" for="form3-endDate-display">End date</label>
+                        <input id="form3-endDate-display" value="{{ t_ends_at }}" class="form-control" disabled="disabled" />
+                        <small class="form-help">The original schedule is shown for reference only after the tournament starts.</small>
+                    </div>
+                {% else %}
+                    <div class="form-group form-half">
+                        <label class="form-label" for="startDate">Custom start date</label>
+                        <input id="startDate" name="startDate" value="{{ t_starts_at }}" class="form-control flatpickr"/>
+                        <small class="form-help">In your own local timezone. This overrides the &quot;Time before tournament starts&quot; setting.
+                            {% if not tournament_director %}<br />Public Community Arenas can start at most 24 hours from now. Team tournaments may be scheduled farther ahead.{% endif %}
+                        </small>
+                    </div>
+                    <div id="form3-endDate-wrap" class="form-group form-half"{% if t_system != 1 %} style="display:none"{% endif %}>
+                        <label class="form-label" for="endDate">Custom end date</label>
+                        <input id="endDate" name="endDate" value="{{ t_ends_at }}" class="form-control flatpickr"{% if t_system != 1 %} disabled="disabled"{% endif %}/>
+                        <small class="form-help">Set an exact end time. The duration field will track this automatically when possible.</small>
+                    </div>
+                {% endif %}
+                </div>
+
+                <div class="form-actions">
+                {% if edit %}
+                    {% if not admin %}<button type="submit" formmethod="post" formaction="/tournament/{{ tournament.id }}/cancel" formnovalidate class="button red text">Cancel the tournament</button>{% endif %}
+                    <button type="submit" data-icon="x" class="submit button text">Save</button>
+                {% else %}
+                    <a href="/tournaments">Cancel</a>
+                    <button type="submit" data-icon="x" class="submit button text">Create a new tournament</button>
+                {% endif %}
+                </div>
+            </form>
+        </div>
+        <div class="box box-pad tour__faq">
+            <div id="tour-faq-arena">
+                <p>You will be notified when the tournament starts, so it is safe to play in another tab while waiting.</p>
+                <h2>Is it rated?</h2>
+                <p>Some tournaments are rated and will affect your rating.</p>
+                <h2>How are scores calculated?</h2>
+                <p>A win has a base score of 2 points, a draw 1 point, and a loss is worth no points.
+                    <br />If you win two games consecutively you will start a double point streak, represented by a flame icon.
+                    <br />The following games will continue to be worth double points until you fail to win a game.
+                    <br />That is, a win will be worth 4 points, a draw 2 points, and a loss will still not award any points.
+                    <br />
+                    <br />For example, two wins followed by a draw will be worth 6 points: 2 + 2 + (2 × 1)
+                </p>
+                <h2>Arena Berserk</h2>
+                <p>When a player clicks the Berserk button at the beginning of the game, they lose half of their clock time, but the win is worth one extra tournament point.
+                    <br />
+                    <br />Going Berserk in time controls with an increment also cancels the increment. (1+2 is an exception, it gives 1+0)
+                    <br />
+                    <br />Berserk is not available for games with zero initial time (0+1, 0+2).
+                    <br />
+                    <br />Berserk only grants an extra point if you play at least 7 moves in the game.
+                </p>
+                <h2>How is the winner decided?</h2>
+                <p>The player(s) with the most points at the conclusion of the tournament&#39;s set time limit will be announced winner(s).
+                    <br />
+                    <br />When two or more players have the same number of points, the tournament performance is the tie break.
+                </p>
+                <h2>How does the pairing work?</h2>
+                <p>At the beginning of the tournament, players are paired based on their rating.
+                    <br />As soon as you finish a game, return to the tournament lobby: you will then be paired with a player close to your ranking. This ensures minimum wait time, however you may not face all other players in the tournament.
+                    <br />Play fast and return to the lobby to play more games and win more points.
+                </p>
+                <h2>How does it end?</h2>
+                <p>The tournament has a countdown clock. When it reaches zero, the tournament rankings are frozen, and the winner is announced. Games in progress must be finished, however they don&#39;t count for the tournament.</p>
+                <h2>Other important rules.</h2>
+                <p>There is a countdown for your first move. Failing to make a move within this time will forfeit the game to your opponent.</p>
+                <p>Drawing the game within the first 10 moves will earn neither player any points.</p>
+                <p>Draw streaks: When a player has consecutive draws in an arena, only the first draw will result in a point, or draws lasting more than 30 moves. The draw streak can only be broken by a win, not a loss or a draw (Not implemented on pychess atm!).</p>
+            </div>
+            <div id="tour-faq-rr">
+                <p>You will be notified when the tournament starts, so it is safe to play in another tab while waiting.</p>
+                <h2>Round-Robin Rules</h2>
+                <p>Round-Robin tournaments freeze the joined field at start. The server then derives the full single-cycle round count and pairs players so everyone meets once.</p>
+                <h2>Is it rated?</h2>
+                <p>Some tournaments are rated and will affect your rating.</p>
+                <h2>How are scores calculated?</h2>
+                <p>Each scheduled round counts once. Round-Robin tournaments do not use Arena streaks or Berserk bonuses.</p>
+                <h2>How is the winner decided?</h2>
+                <p>The player(s) with the most tournament points after the scheduled rounds are the winner(s).
+                    <br />
+                    <br />When two or more players have the same number of points, Sonneborn-Berger values are used as the tie break.
+                </p>
+                <h2>How does it end?</h2>
+                <p>The tournament ends after the derived rounds are completed. The duration field is only an estimate here and does not stop the event early.</p>
+                <h2>Absences</h2>
+                <p>If you miss a round, you are treated as absent for that round instead of continuing with Arena-style continuous pairings.</p>
+            </div>
+            <div id="tour-faq-swiss">
+                <p>You will be notified when the tournament starts, so it is safe to play in another tab while waiting.</p>
+                <h2>Swiss Rules</h2>
+                <p>Swiss tournaments are played in fixed rounds. After each round finishes, the next round starts and players are paired with others on similar score.</p>
+                <h2>Is it rated?</h2>
+                <p>Some tournaments are rated and will affect your rating.</p>
+                <h2>How does pairing work?</h2>
+                <p>Players are paired by Swiss rules with score-group logic and color constraints.
+                    <br />
+                    <br />You cannot play the same opponent twice, and the system can assign byes or mark absences when the field or attendance requires it.
+                </p>
+                <h2>How are scores calculated?</h2>
+                <p>Each scheduled round counts once. Swiss tournaments do not use Arena streaks or Berserk bonuses.</p>
+                <h2>How is the winner decided?</h2>
+                <p>The player(s) with the most tournament points after the scheduled rounds are the winner(s).
+                    <br />
+                    <br />When two or more players have the same number of points, Sonneborn-Berger values are used as the tie break.
+                </p>
+                <h2>How does it end?</h2>
+                <p>The tournament ends after the scheduled rounds are completed. The duration field is only an estimate here and does not stop the event early.</p>
+                <h2>Late join and absences</h2>
+                <p>Players can join late while the event is still in its early rounds. Missed rounds are recorded on the standings, and absent players are simply not paired for that round.</p>
+            </div>
+        </div>
+        {% if edit and admin and (tournament.status in [0, 1] or tournament_delete_allowed) %}
+        <div class="box box-pad tour__danger-zone">
+            <h2>{% trans %}Danger zone{% endtrans %}</h2>
+            {% if tournament.status in [0, 1] %}
+            <p>{% trans %}Aborting the tournament ends it immediately for everyone. This action cannot be undone.{% endtrans %}</p>
+            <button
+                id="tournament-abort"
+                type="button"
+                class="button tournament-abort-button"
+                data-action="/tournaments/{{ tournament.id }}/abort"
+                data-return-url="/tournament/{{ tournament.id }}"
+            >{% trans %}Abort tournament{% endtrans %}</button>
+            {% elif tournament_delete_allowed %}
+            <p>This Arena has no pairings. Deleting it permanently removes the tournament, registrations, and chat.</p>
+            <button
+                id="tournament-delete"
+                type="button"
+                class="button tournament-abort-button"
+                data-action="/tournaments/{{ tournament.id }}/delete"
+                data-return-url="/tournaments"
+            >Delete tournament</button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
+{% block js %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="{{ js }}"></script>
+{% endblock %}

@@ -1,0 +1,62 @@
+import asyncio
+import logging
+from unittest.mock import patch
+
+import test_logger
+from aiohttp.test_utils import AioHTTPTestCase
+from const import BYEGAME, STARTED
+from mongomock_motor import AsyncMongoMockClient
+from pychess_global_app_state import PychessGlobalAppState
+from pychess_global_app_state_utils import get_app_state
+from typedefs import pychess_global_app_state_key
+
+from server import make_app
+
+test_logger.init_test_logger()
+
+log = logging.getLogger(__name__)
+
+ONE_TEST_ONLY = False
+
+
+class TournamentTestCase(AioHTTPTestCase):
+    async def asyncSetUp(self):
+        # Tournament tests create the system tournaments they need explicitly.
+        # Loading the live calendar here makes unrelated tests depend on the
+        # wall clock whenever a community Arena overlaps a scheduled event.
+        with patch("pychess_global_app_state.new_scheduled_tournaments", return_value=[]):
+            await super().asyncSetUp()
+
+    async def tearDownAsync(self):
+        app_state = get_app_state(self.app)
+        has_games = len(app_state.games) > 0
+
+        # Abort can remove games from app_state.games, so iterate over a stable snapshot.
+        for game in list(app_state.games.values()):
+            if game.status == BYEGAME:  # ByeGame
+                continue
+            if game.status <= STARTED:
+                await game.abort_by_server()
+
+        if has_games and hasattr(self, "tournament") and hasattr(self.tournament, "game_tasks"):
+            for task in self.tournament.game_tasks:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+        await self.client.close()
+
+    async def get_application(self):
+        app = make_app(db_client=AsyncMongoMockClient(tz_aware=True))
+        return app
+
+    async def reload_tournament(self, db_client, tournament_id):
+        from tournament.tournaments import load_tournament
+
+        app = make_app(db_client=db_client)
+        app[pychess_global_app_state_key] = PychessGlobalAppState(app)
+        app_state = get_app_state(app)
+        tournament = await load_tournament(app_state, tournament_id)
+        return app_state, tournament

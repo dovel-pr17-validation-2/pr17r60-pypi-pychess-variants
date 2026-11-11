@@ -1,0 +1,32 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="page-menu">
+<aside></aside>
+<div class="guide report-faq">
+  <h1>Report FAQ</h1>
+
+  <h2>What are reports for?</h2>
+  <p>Reports help moderators keep fair play and respectful communication standards. If you believe a user has broken the Terms of Service, submit a report so the incident can be reviewed.</p>
+
+  <h2>Why does PyChess need user reports?</h2>
+  <p>Community reports are an important signal for moderation. They help staff find incidents faster, especially when context is spread across games, profiles, and private messages.</p>
+
+  <h2>What should I include in a report?</h2>
+  <p>Provide concrete context: links to games, tournaments, or profiles, plus a short explanation of what happened. Specific evidence allows moderators to verify the issue quickly.</p>
+
+  <h2>What happens after I send a report?</h2>
+  <p>Reports go to the moderation queue. A moderator reviews the details and can issue warnings, communication restrictions, or stronger actions for serious or repeated abuse. Review can take some time depending on queue volume.</p>
+
+  <h2>Will I be informed about the result?</h2>
+  <p>You may receive a notification for some outcomes, but not every action is announced to reporters. No follow-up message does not mean the report was ignored.</p>
+
+  <h2>Why can a reported account still be active?</h2>
+  <p>Some actions are limited in scope. For example, communication-related sanctions can restrict chat/community participation without fully blocking game play.</p>
+</div>
+</main>
+</div>
+{% endblock %}
+{% block js %}
+<script src="{{ js }}"></script>
+{% endblock %}
